@@ -4,20 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Зведений Будівельний Калькулятор (Роботи + Матеріали)</title>
-    <!-- Підключаємо Bootstrap для сучасного дизайну -->
-    <link href="https://jsdelivr.net" rel="stylesheet">
+    <!-- Використовуємо перевірене пряме посилання на Bootstrap CSS -->
+    <link rel="stylesheet" href="https://bootstrapcdn.com">
     <!-- Бібліотеки для PDF -->
     <script src="https://cloudflare.com"></script>
     <style>
         body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .nav-tabs .nav-link { font-weight: 600; color: #495057; }
         .nav-tabs .nav-link.active { background-color: #fff; color: #0d6efd; border-bottom-color: transparent; }
-        .card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 8px; }
         .table th { background-color: #f8f9fa; }
         .total-banner { background: linear-gradient(135deg, #212529, #343a40); color: white; padding: 20px; border-radius: 8px; font-weight: bold; }
         .pdf-table th { background-color: #e9ecef !important; color: #000 !important; }
         .pdf-table td, .pdf-table th { border: 1px solid #dee2e6 !important; padding: 8px !important; }
         .sort-btn { padding: 0 5px; font-size: 12px; cursor: pointer; }
+        header { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
     </style>
 </head>
 <body>
@@ -25,42 +26,42 @@
 <div class="container my-5" style="max-width: 1200px;">
     <header class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>
-            <h1 class="fw-bold text-dark">🏗️ Зведений Будівельний Калькулятор</h1>
+            <h1 class="fw-bold text-dark" style="font-weight: 700;">🏗️ Зведений Будівельний Калькулятор</h1>
             <p class="text-muted">Повний контроль над розрахунком вартості робіт та власних категорій матеріалів</p>
         </div>
         <div id="mainTotalDisplay" class="fs-4 fw-bold bg-white text-dark border border-dark px-4 py-2 rounded shadow-sm text-end">
             <div>Роботи: 0.00 грн</div>
             <div>Матеріали: 0.00 грн</div>
-            <div class="text-primary border-top mt-1 pt-1 fs-3">Всього: 0.00 грн</div>
+            <div class="text-primary border-top mt-1 pt-1 fs-3" style="font-size: 1.5rem; font-weight: bold;">Всього: 0.00 грн</div>
         </div>
     </header>
 
     <!-- Головна навігація -->
     <ul class="nav nav-tabs mb-4" id="calcTabs" role="tablist">
         <li class="nav-item">
-            <button class="nav-link active" id="jobs-tab" data-bs-toggle="tab" data-bs-target="#jobs-content" type="button">🛠️ Розрахунок Робіт</button>
+            <a class="nav-link active" id="jobs-tab" data-toggle="tab" href="#jobs-content" role="tab">🛠️ Розрахунок Робіт</a>
         </li>
         <li class="nav-item">
-            <button class="nav-link" id="materials-tab" data-bs-toggle="tab" data-bs-target="#materials-content" type="button">🧱 Розрахунок Матеріалів</button>
+            <a class="nav-link" id="materials-tab" data-toggle="tab" href="#materials-content" role="tab">🧱 Розрахунок Матеріалів</a>
         </li>
         <li class="nav-item">
-            <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-content" type="button">⚙️ Налаштування бази</button>
+            <a class="nav-link" id="settings-tab" data-toggle="tab" href="#settings-content" role="tab">⚙️ Налаштування бази</a>
         </li>
         <li class="nav-item">
-            <button class="nav-link" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved-content" type="button">💾 Архів Кошторисів</button>
+            <a class="nav-link" id="saved-tab" data-toggle="tab" href="#saved-content" role="tab">💾 Архів Кошторисів</a>
         </li>
     </ul>
 
     <!-- Елементи керування об'єктом -->
     <div class="row mb-4 align-items-end">
         <div class="col-md-4">
-            <label class="form-label fw-bold">Назва поточного об'єкту / кошторису:</label>
+            <label class="form-label fw-bold" style="font-weight: 600;">Назва поточного об'єкту / кошторису:</label>
             <input type="text" id="estimateName" class="form-control" value="Кошторис об'єкту (Новий)">
         </div>
         <div class="col-md-8 d-flex gap-2 flex-wrap mt-2">
-            <button class="btn btn-success px-3" onclick="saveCurrentEstimate()">💾 Зберегти в архів</button>
-            <button class="btn btn-info text-white px-3" onclick="openPreviewModal()">👁️ Попередній перегляд</button>
-            <button class="btn btn-danger px-3" onclick="exportToPDF()">📄 Завантажити PDF</button>
+            <button class="btn btn-success mr-2" onclick="saveCurrentEstimate()">💾 Зберегти в архів</button>
+            <button class="btn btn-info text-white mr-2" onclick="openPreviewModal()">👁️ Попередній перегляд</button>
+            <button class="btn btn-danger" onclick="exportToPDF()">📄 Завантажити PDF</button>
         </div>
     </div>
 
@@ -76,36 +77,36 @@
             <div id="materialsCalculatorContainer"></div>
         </div>
 
-        <!-- ВКЛАДКА 3: НАЛАШТУВАННЯ (БАЗА ДАНИХ) -->
+        <!-- ВКЛАДКА 3: НАЛАШТУВАННЯ -->
         <div class="tab-pane fade" id="settings-content" role="tabpanel">
             <!-- КЕРУВАННЯ КАТЕГОРІЯМИ -->
             <div class="card p-4 mb-4 bg-light border">
-                <h4 class="fw-bold text-dark mb-3">📁 Керування Категоріями</h4>
+                <h4 class="fw-bold text-dark mb-3" style="font-weight: 700;">📁 Керування Категоріями</h4>
                 <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Тип категорій:</label>
-                        <select id="manageCategoryType" class="form-select" onchange="renderCategorySettingsList()">
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label fw-bold" style="font-weight: 600;">Тип категорій:</label>
+                        <select id="manageCategoryType" class="form-select form-control" onchange="renderCategorySettingsList()">
                             <option value="jobs">Категорії Робіт</option>
                             <option value="materials">Категорії Матеріалів</option>
                         </select>
                     </div>
-                    <div class="col-md-5">
-                        <label class="form-label fw-bold">Назва нової категорії:</label>
+                    <div class="col-md-5 mb-2">
+                        <label class="form-label fw-bold" style="font-weight: 600;">Назва нової категорії:</label>
                         <input type="text" id="newCategoryName" class="form-control" placeholder="Введіть назву своєї категорії">
                     </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button class="btn btn-primary w-100" onclick="addNewCategory()">➕ Створити категорію</button>
+                    <div class="col-md-3 d-flex align-items-end mb-2">
+                        <button class="btn btn-primary w-100 btn-block" onclick="addNewCategory()">➕ Створити категорію</button>
                     </div>
                 </div>
                 <div class="mt-3">
-                    <label class="fw-bold mb-1">Поточні категорії (клікніть на ✏️ для перейменування або на × для видалення):</label>
+                    <label class="fw-bold mb-1" style="font-weight: 600;">Поточні категорії (клікніть на ✏️ для перейменування або на × для видалення):</label>
                     <div id="categorySettingsList" class="d-flex flex-wrap gap-2"></div>
                 </div>
             </div>
 
             <!-- КЕРУВАННЯ ПОЗИЦІЯМИ РОБІТ -->
-            <div class="card p-4 mb-4">
-                <h4 class="fw-bold text-secondary mb-3">🛠️ База Даних Робіт</h4>
+            <div class="card p-4 mb-4 border">
+                <h4 class="fw-bold text-secondary mb-3" style="font-weight: 700;">🛠️ База Даних Робіт</h4>
                 <div class="table-responsive max-vh-50">
                     <table class="table table-bordered align-middle table-sm">
                         <thead>
@@ -121,21 +122,21 @@
                         <tbody id="settingsJobsTableBody"></tbody>
                     </table>
                 </div>
-                <div class="card p-3 bg-light mt-3">
-                    <h5 class="fw-bold mb-2">➕ Додати нову роботу у ваш прайс</h5>
-                    <div class="row g-2">
-                        <div class="col-md-3"><select id="newJobCategorySelect" class="form-select"></select></div>
-                        <div class="col-md-4"><input type="text" id="newJobName" class="form-control" placeholder="Назва роботи"></div>
-                        <div class="col-md-2"><input type="text" id="newJobUnit" class="form-control" placeholder="м², шт, м.п."></div>
-                        <div class="col-md-2"><input type="number" id="newJobPrice" class="form-control" placeholder="Ціна"></div>
-                        <div class="col-md-1"><button class="btn btn-primary w-100" onclick="addNewItem('jobs')">Додати</button></div>
+                <div class="card p-3 bg-light mt-3 border">
+                    <h5 class="fw-bold mb-2" style="font-weight: 600;">➕ Додати нову роботу у ваш прайс</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-2"><select id="newJobCategorySelect" class="form-control"></select></div>
+                        <div class="col-md-4 mb-2"><input type="text" id="newJobName" class="form-control" placeholder="Назва роботи"></div>
+                        <div class="col-md-2 mb-2"><input type="text" id="newJobUnit" class="form-control" placeholder="м², шт"></div>
+                        <div class="col-md-2 mb-2"><input type="number" id="newJobPrice" class="form-control" placeholder="Ціна"></div>
+                        <div class="col-md-1 mb-2"><button class="btn btn-primary btn-block" onclick="addNewItem('jobs')">Додати</button></div>
                     </div>
                 </div>
             </div>
 
             <!-- КЕРУВАННЯ ПОЗИЦІЯМИ МАТЕРІАЛІВ -->
-            <div class="card p-4 mb-4">
-                <h4 class="fw-bold text-secondary mb-3">🧱 База Даних Матеріалів</h4>
+            <div class="card p-4 mb-4 border">
+                <h4 class="fw-bold text-secondary mb-3" style="font-weight: 700;">🧱 База Даних Матеріалів</h4>
                 <div class="table-responsive max-vh-50">
                     <table class="table table-bordered align-middle table-sm">
                         <thead>
@@ -151,18 +152,11 @@
                         <tbody id="settingsMaterialsTableBody"></tbody>
                     </table>
                 </div>
-                <div class="card p-3 bg-light mt-3">
-                    <h5 class="fw-bold mb-2">➕ Додати новий матеріал у ваш прайс</h5>
-                    <div class="row g-2">
-                        <div class="col-md-3"><select id="newMaterialCategorySelect" class="form-select"></select></div>
-                        <div class="col-md-4"><input type="text" id="newMaterialName" class="form-control" placeholder="Назва матеріалу"></div>
-                        <div class="col-md-2"><input type="text" id="newMaterialUnit" class="form-control" placeholder="мішок, шт, кг"></div>
-                        <div class="col-md-2"><input type="number" id="newMaterialPrice" class="form-control" placeholder="Ціна"></div>
-                        <div class="col-md-1"><button class="btn btn-primary w-100" onclick="addNewItem('materials')">Додати</button></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- БЛОК ПЕРЕНЕСЕННЯ БАЗИ ДАНИХ -->
-            <div class="card p-4 bg-light border border-primary">
-                <h4 class="fw-bold text-primary mb-3">📱 Перенесення бази даних між пристроями (ПК ⇄ Телефон)</h4>
+                <div class="card p-3 bg-light mt-3 border">
+                    <h5 class="fw-bold mb-2" style="font-weight: 600;">➕ Додати новий матеріал у ваш прайс</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-2"><select id="newMaterialCategorySelect" class="form-control"></select></div>
+                        <div class="col-md-4 mb-2"><input type="text" id="newMaterialName" class="form-control" placeholder="Назва матеріалу"></div>
+                        <div class="col-md-2 mb-2"><input type="text" id="newMaterialUnit" class="form-control" placeholder="мішок, шт"></div>
+                        <div class="col-md-2 mb-2"><input type="number" id="newMaterialPrice" class="form-control" placeholder="Ціна"></div>
+                        <div class="col-md-1 mb-2"><button class="btn btn-primary btn-block" onclick="addNewItem('materials')">Додати</button></div>
