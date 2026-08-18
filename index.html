@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Зведений Будівельний Калькулятор (Роботи + Матеріали)</title>
+    <!-- Підключаємо Bootstrap для сучасного дизайну -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Бібліотеки для PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .nav-tabs .nav-link { font-weight: 600; color: #495057; }
+        .nav-tabs .nav-link.active { background-color: #fff; color: #0d6efd; border-bottom-color: transparent; }
+        .card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .table th { background-color: #f8f9fa; }
+        .total-banner { background: linear-gradient(135deg, #212529, #343a40); color: white; padding: 20px; border-radius: 8px; font-weight: bold; }
+        .pdf-table th { background-color: #e9ecef !important; color: #000 !important; }
+        .pdf-table td, .pdf-table th { border: 1px solid #dee2e6 !important; padding: 8px !important; }
+    </style>
+</head>
+<body>
+
+<div class="container my-5" style="max-width: 1200px;">
+    <header class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h1 class="fw-bold text-dark">🏗️ Зведений Будівельний Калькулятор</h1>
+            <p class="text-muted">Повний контроль над розрахунком вартості робіт та будівельних матеріалів</p>
+        </div>
+        <div id="mainTotalDisplay" class="fs-4 fw-bold bg-white text-dark border border-dark px-4 py-2 rounded shadow-sm text-end">
+            <div>Роботи: 0.00 грн</div>
+            <div>Матеріали: 0.00 грн</div>
+            <div class="text-primary border-top mt-1 pt-1 fs-3">Всього: 0.00 грн</div>
+        </div>
+    </header>
+
+    <!-- Головна навігація -->
+    <ul class="nav nav-tabs mb-4" id="calcTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="jobs-tab" data-bs-toggle="tab" data-bs-target="#jobs-content" type="button">🛠️ Розрахунок Робіт</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="materials-tab" data-bs-toggle="tab" data-bs-target="#materials-content" type="button">🧱 Розрахунок Матеріалів</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-content" type="button">⚙️ Налаштування бази</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved-content" type="button">💾 Архів Кошторисів</button>
+        </li>
+    </ul>
+
+    <!-- Елементи керування об'єктом -->
+    <div class="row mb-4 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Назва поточного об'єкту / кошторису:</label>
+            <input type="text" id="estimateName" class="form-control" value="Кошторис об'єкту (Новий)">
+        </div>
+        <div class="col-md-8 d-flex gap-2 flex-wrap mt-2">
+            <button class="btn btn-success px-3" onclick="saveCurrentEstimate()">💾 Зберегти в архів</button>
+            <button class="btn btn-info text-white px-3" onclick="openPreviewModal()">👁️ Попередній перегляд</button>
+            <button class="btn btn-danger px-3" onclick="exportToPDF()">📄 Завантажити PDF</button>
+        </div>
+    </div>
+
+    <div class="tab-content" id="calcTabsContent">
+        
+        <!-- ВКЛАДКА 1: РОЗРАХУНОК РОБІТ -->
+        <div class="tab-pane fade show active" id="jobs-content" role="tabpanel">
+            <div id="jobsCalculatorContainer"></div>
+        </div>
+
+        <!-- ВКЛАДКА 2: РОЗРАХУНОК МАТЕРІАЛІВ -->
+        <div class="tab-pane fade" id="materials-content" role="tabpanel">
+            <div id="materialsCalculatorContainer"></div>
+        </div>
+
+        <!-- ВКЛАДКА 3: НАЛАШТУВАННЯ (БАЗА ДАНИХ) -->
+        <div class="tab-pane fade" id="settings-content" role="tabpanel">
+            <!-- КЕРУВАННЯ КАТЕГОРІЯМИ -->
+            <div class="card p-4 mb-4 bg-light border">
+                <h4 class="fw-bold text-dark mb-3">📁 Керування Категоріями</h4>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Тип категорій:</label>
+                        <select id="manageCategoryType" class="form-select" onchange="renderCategorySettingsList()">
+                            <option value="jobs">Категорії Робіт</option>
+                            <option value="materials">Категорії Матеріалів</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold">Назва нової категорії:</label>
+                        <input type="text" id="newCategoryName" class="form-control" placeholder="Наприклад: Демонтажні роботи або Чорнові матеріали">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="btn btn-primary w-100" onclick="addNewCategory()">➕ Створити категорію</button>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <label class="fw-bold mb-1">Поточні категорії (клікніть для редагування назви або видалення):</label>
+                    <div id="categorySettingsList" class="d-flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+
+            <!-- КЕРУВАННЯ ПОЗИЦІЯМИ РОБІТ -->
+            <div class="card p-4 mb-4">
+                <h4 class="fw-bold text-secondary mb-3">🛠️ База Даних Робіт</h4>
+                <div class="table-responsive max-vh-50">
+                    <table class="table table-bordered align-middle table-sm">
+                        <thead>
+                            <tr>
+                                <th>Категорія</th>
+                                <th>Назва роботи</th>
+                                <th style="width: 90px;">Од. вим.</th>
+                                <th style="width: 120px;">Базова ціна</th>
+                                <th style="width: 50px;">Дія</th>
+                            </tr>
+                        </thead>
+                        <tbody id="settingsJobsTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="card p-3 bg-light mt-3">
+                    <h5 class="fw-bold mb-2">➕ Додати нову роботу у ваш прайс</h5>
+                    <div class="row g-2">
+                        <div class="col-md-3"><select id="newJobCategorySelect" class="form-select"></select></div>
+                        <div class="col-md-4"><input type="text" id="newJobName" class="form-control" placeholder="Назва роботи"></div>
+                        <div class="col-md-2"><input type="text" id="newJobUnit" class="form-control" placeholder="м², шт, м.п."></div>
+                        <div class="col-md-2"><input type="number" id="newJobPrice" class="form-control" placeholder="Ціна"></div>
+                        <div class="col-md-1"><button class="btn btn-primary w-100" onclick="addNewItem('jobs')">Додати</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- КЕРУВАННЯ ПОЗИЦІЯМИ МАТЕРІАЛІВ -->
+            <div class="card p-4">
+                <h4 class="fw-bold text-secondary mb-3">🧱 База Даних Матеріалів</h4>
+                <div class="table-responsive max-vh-50">
+                    <table class="table table-bordered align-middle table-sm">
+                        <thead>
+                            <tr>
+                                <th>Категорія (Корегування)</th>
+                                <th>Назва матеріалу</th>
+                                <th style="width: 90px;">Од. вим.</th>
+                                <th style="width: 120px;">Базова ціна</th>
+                                <th style="width: 50px;">Дія</th>
+                            </tr>
+                        </thead>
+                        <tbody id="settingsMaterialsTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="card p-3 bg-light mt-3">
+                    <h5 class="fw-bold mb-2">➕ Додати новий матеріал у ваш прайс</h5>
+                    <div class="row g-2">
+                        <div class="col-md-3"><select id="newMaterialCategorySelect" class="form-select"></select></div>
+                        <div class="col-md-4"><input type="text" id="newMaterialName" class="form-control" placeholder="Назва матеріалу"></div>
+                        <div class="col-md-2"><input type="text" id="newMaterialUnit" class="form-control" placeholder="мішок, шт, кг"></div>
+                        <div class="col-md-2"><input type="number" id="newMaterialPrice" class="form-control" placeholder="Ціна"></div>
+                        <div class="col-md-1"><button class="btn btn-primary w-100" onclick="addNewItem('materials')">Додати</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 text-end">
+                <button class="btn btn-primary btn-lg px-5" onclick="saveAllSettings()">💾 Зберегти всі зміни прайсу</button>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА 4: АРХІВ КОШТОРИСІВ -->
+        <div class="tab-pane fade" id="saved-content" role="tabpanel">
+            <div class="card p-4">
+                <h3 class="fw-bold mb-3 text-secondary">📂 Архів Ваших Об'єктів</h3>
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>Дата збереження</th>
+                                <th>Назва об'єкту</th>
+                                <th>Роботи</th>
+                                <th>Матеріали</th>
+                                <th>Загальна сума</th>
+                                <th>Дії</th>
+                            </tr>
+                        </thead>
+                        <tbody id="savedEstimatesTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold">👁️ Попередній перегляд кошторису перед друком</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light p-4">
+                <div id="previewPrintArea" class="bg-white p-5 rounded shadow-sm border mx-auto" style="max-width: 900px; color: #000;">
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
+                <button type="button" class="btn btn-danger px-4" onclick="exportToPDFFromPreview()">📄 Завантажити цей PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const defaultJobCategories = ["Стіни та Стеля", "Підлога", "Електрика", "Сантехніка"];
+const defaultMaterialCategories = ["Чорнові матеріали", "Розхідники", "Електрика-Матеріали"];
+
+const defaultJobs = [
+    { id: 1, category: "Стіни та Стеля", name: "Штукатурка стін по маяках", unit: "м²", price: 150 },
+    { id: 2, category: "Стіни та Стеля", name: "Шпаклювання під шпалери", unit: "м²", price: 120 },
+    { id: 3, category: "Підлога", name: "Укладання ламінату", unit: "м²", price: 100 }
+];
+
+const defaultMaterials = [
+    { id: 101, category: "Чорнові матеріали", name: "Штукатурка гіпсова (30 кг)", unit: "мішок", price: 190 },
+    { id: 102, category: "Чорнові матеріали", name: "Ґрунтовка глибокого проникнення (10л)", unit: "шт", price: 280 }
+];
+
+let jobCategories = JSON.parse(localStorage.getItem('myCalcJobCats')) || defaultJobCategories;
+let materialCategories = JSON.parse(localStorage.getItem('myCalcMatCats')) || defaultMaterialCategories;
+let jobs = JSON.parse(localStorage.getItem('myCalcJobs')) || defaultJobs;
+let materials = JSON.parse(localStorage.getItem('myCalcMaterials')) || defaultMaterials;
+
+let currentVolumes = { jobs: {}, materials: {} };
+let currentPrices = { jobs: {}, materials: {} };
+
+document.addEventListener("DOMContentLoaded", () => {
+    initPricesMap();
+    renderAll();
+});
+
+function initPricesMap() {
+    jobs.forEach(j => { if (currentPrices.jobs[j.id] === undefined) currentPrices.jobs[j.id] = j.price; });
+    materials.forEach(m => { if (currentPrices.materials[m.id] === undefined) currentPrices.materials[m.id] = m.price; });
+}
+
+function renderAll() {
+    renderCalculator('jobs', 'jobsCalculatorContainer');
+    renderCalculator('materials', 'materialsCalculatorContainer');
+    renderSettingsLists();
+    renderSavedEstimates();
+    updateSelectOptions();
+}
+
+function renderCalculator(type, containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    const itemsList = type === 'jobs' ? jobs : materials;
+    const categories = type === 'jobs' ? jobCategories : materialCategories;
+
+    categories.forEach(cat => {
+        const catItems = itemsList.filter(i => i.category === cat);
+        if(catItems.length === 0) return;
+
+        const card = document.createElement('div');
+        card.className = 'card mb-4';
+
+        let tableHTML = `
+            <div class="card-header bg-light fw-bold text-uppercase text-secondary">${cat}</div>
+            <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+                <thead><tr>
+                    <th style="width: 45%;">Назва позиції</th>
+                    <th style="width: 10%;">Од. вим.</th>
+                    <th style="width: 15%;">Ціна за од. (грн)</th>
+                    <th style="width: 15%;">Обсяг / Кіл-ть</th>
+                    <th style="width: 15%; text-align: right;">Сума (грн)</th>
+                </tr></thead><tbody>
+        `;
+
+        catItems.forEach(item => {
+            const vol = currentVolumes[type][item.id] || '';
+            const price = currentPrices[type][item.id] !== undefined ? currentPrices[type][item.id] : item.price;
+            const sum = vol ? (vol * price).toFixed(2) : '0.00';
+
+            tableHTML += `
+                <tr>
+                    <td>${item.name}</td>
+                    <td><span class="badge bg-secondary">${item.unit}</span></td>
+                    <td><input type="number" class="form-control form-control-sm" value="${price}" oninput="updateInlinePrice('${type}', ${item.id}, this.value)"></td>
+                    <td><input type="number" class="form-control form-control-sm" placeholder="0" value="${vol}" oninput="updateVolume('${type}', ${item.id}, this.value)"></td>
+                    <td style="text-align: right;" id="sum-${type}-${item.id}" class="fw-semibold text-dark">${sum}</td>
+                </tr>
+            `;
+        });
+
+        tableHTML += `</tbody></table></div></div>`;
+        card.innerHTML = tableHTML;
+        container.appendChild(card);
+    });
+    calculateTotals();
+}
+
+function updateVolume(type, id, value) {
+    currentVolumes[type][id] = value ? parseFloat(value) : 0;
+    recalculateRow(type, id);
+}
+
+function updateInlinePrice(type, id, value) {
+    currentPrices[type][id] = value ? parseFloat(value) : 0;
+    recalculateRow(type, id);
+}
+
+function recalculateRow(type, id) {
+    const vol = currentVolumes[type][id] || 0;
+    const prc = currentPrices[type][id] !== undefined ? currentPrices[type][id] : 0;
+    const sumEl = document.getElementById(`sum-${type}-${id}`);
+    if (sumEl) sumEl.innerText = (vol * prc).toFixed(2);
+    calculateTotals();
+}
+
+function calculateTotals() {
+    let totals = { jobs: 0, materials: 0 };
+    
+    ['jobs', 'materials'].forEach(type => {
+        const list = type === 'jobs' ? jobs : materials;
+        list.forEach(item => {
+            const vol = currentVolumes[type][item.id] || 0;
+            const prc = currentPrices[type][item.id] !== undefined ? currentPrices[type][item.id] : item.price;
+            totals[type] += vol * prc;
+        });
+    });
+
+    const totalSum = totals.jobs + totals.materials;
+    document.getElementById('mainTotalDisplay').innerHTML = `
+        <div class="text-muted small">Роботи: <span class="text-dark">${totals.jobs.toFixed(2)} грн</span></div>
+        <div class="text-muted small">Матеріали: <span class="text-dark">${totals.materials.toFixed(2)} грн</span></div>
+        <div class="text-primary border-top mt-1 pt-1 fs-3">Всього: ${totalSum.toFixed(2)} грн</div>
+    `;
+    return totals;
+}
+
+function renderCategorySettingsList() {
+    const type = document.getElementById('manageCategoryType').value;
+    const list = type === 'jobs' ? jobCategories : materialCategories;
+    const container = document.getElementById('categorySettingsList');
+    container.innerHTML = '';
+
+    list.forEach((cat, index) => {
+        const badge = document.createElement('div');
+        badge.className = "badge bg-dark p-2 d-flex align-items-center gap-2 fs-6";
+        badge.innerHTML = `
+            <span style="cursor:pointer;" onclick="renameCategory('${type}', ${index})">✏️ ${cat}</span>
+            <span style="cursor:pointer;" class="text-danger fw-bold" onclick="deleteCategory('${type}', ${index})">×</span>
+        `;
+        container.appendChild(badge);
+    });
+}
+
+function addNewCategory() {
+    const type = document.getElementById('manageCategoryType').value;
+    const name = document.getElementById('newCategoryName').value.trim();
+    if(!name) return;
+
+    const list = type === 'jobs' ? jobCategories : materialCategories;
+    if(list.includes(name)) { alert("Така категорія вже існує!"); return; }
+
+    list.push(name);
+    document.getElementById('newCategoryName').value = '';
+    saveCategoriesToStorage();
+    renderAll();
+}
+
+function renameCategory(type, index) {
+    const list = type === 'jobs' ? jobCategories : materialCategories;
+    const oldName = list[index];
+    const newName = prompt(`Введіть нову назву для категорії "${oldName}":`, oldName);
+    if(!newName || newName.trim() === oldName) return;
+
+    list[index] = newName.trim();
+    const itemsList = type === 'jobs' ? jobs : materials;
+    itemsList.forEach(item => { if(item.category === oldName) item.category = newName.trim(); });
+
+    saveCategoriesToStorage();
+    localStorage.setItem(type === 'jobs' ? 'myCalcJobs' : 'myCalcMaterials', JSON.stringify(itemsList));
+    renderAll();
+}
+
+function deleteCategory(type, index) {
+    const list = type === 'jobs' ? jobCategories : materialCategories;
+    const catName = list[index];
+    if(confirm(`Видалити категорію "${catName}" та ВСІ позиції всередині?`)) {
+        if(type === 'jobs') {
+            jobs = jobs.filter(j => j.category !== catName);
+            jobCategories.splice(index, 1);
+        } else {
+            materials = materials.filter(m => m.category !== catName);
+            materialCategories.splice(index, 1);
+        }
+        saveCategoriesToStorage();
+        localStorage.setItem(type === 'jobs' ? 'myCalcJobs' : 'myCalcMaterials', JSON.stringify(type === 'jobs' ? jobs : materials));
+        renderAll();
+    }
+}
+
+function saveCategoriesToStorage() {
+    localStorage.setItem('myCalcJobCats', JSON.stringify(jobCategories));
+    localStorage.setItem('myCalcMatCats', JSON.stringify(materialCategories));
+}
+
+function renderSettingsLists() {
+    renderCategorySettingsList();
+    
+    // БАЗА РОБІТ
+    const jobsTbody = document.getElementById('settingsJobsTableBody');
+    jobsTbody.innerHTML = '';
+    jobs.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><small class="text-muted">${item.category}</small></td>
+            <td><input type="text" class="form-control form-control-sm" value="${item.name}" id="set-name-jobs-${item.id}"></td>
+            <td><input type="text" class="form-control form-control-sm" value="${item.unit}" id="set-unit-jobs-${item.id}"></td>
+            <td><input type="number" class="form-control form-control-sm" value="${item.price}" id="set-price-jobs-${item.id}"></td>
+            <td class="text-center"><button class="btn btn-sm btn-link text-danger p-0" onclick="deleteItem('jobs', ${item.id})">❌</button></td>
+        `;
+        jobsTbody.appendChild(tr);
+    });
+
+    // БАЗА МАТЕРІАЛІВ (З ВИПАДАЮЧИМ СПИСКОМ КАТЕГОРІЙ)
+    const materialsTbody = document.getElementById('settingsMaterialsTableBody');
+    materialsTbody.innerHTML = '';
+    materials.forEach(item => {
+        const tr = document.createElement('tr');
+        
+        let catOptions = materialCategories.map(cat => 
+            `<option value="${cat}" ${cat === item.category ? 'selected' : ''}>${cat}</option>`
+        ).join('');
+
+        tr.innerHTML = `
+            <td>
+                <select class="form-select form-select-sm" id="set-cat-materials-${item.id}">
+                    ${catOptions}
+                </select>
+            </td>
+            <td><input type="text" class="form-control form-control-sm" value="${item.name}" id="set-name-materials-${item.id}"></td>
+            <td><input type="text" class="form-control form-control-sm" value="${item.unit}" id="set-unit-materials-${item.id}"></td>
+            <td><input type="number" class="form-control form-control-sm" value="${item.price}" id="set-price-materials-${item.id}"></td>
+            <td class="text-center"><button class="btn btn-sm btn-link text-danger p-0" onclick="deleteItem('materials', ${item.id})">❌</button></td>
+        `;
+        materialsTbody.appendChild(tr);
+    });
+}
+
+function updateSelectOptions() {
+    document.getElementById('newJobCategorySelect').innerHTML = jobCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+    document.getElementById('newMaterialCategorySelect').innerHTML = materialCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function addNewItem(type) {
+    const cat = document.getElementById(type === 'jobs' ? 'newJobCategorySelect' : 'newMaterialCategorySelect').value;
+    const name = document.getElementById(type === 'jobs' ? 'newJobName' : 'newMaterialName').value.trim();
+    const unit = document.getElementById(type === 'jobs' ? 'newJobUnit' : 'newMaterialUnit').value.trim();
+    const price = parseFloat(document.getElementById(type === 'jobs' ? 'newJobPrice' : 'newMaterialPrice').value);
+
+    if(!name || !unit || isNaN(price)) { alert("Заповніть всі поля!"); return; }
+
+    const list = type === 'jobs' ? jobs : materials;
+    const newId = list.length > 0 ? Math.max(...list.map(i => i.id)) + 1 : 1;
+    
+    list.push({ id: newId, category: cat, name, unit, price });
+    currentPrices[type][newId] = price;
+
+    document.getElementById(type === 'jobs' ? 'newJobName' : 'newMaterialName').value = '';
+    document.getElementById(type === 'jobs' ? 'newJobUnit' : 'newMaterialUnit').value = '';
+    document.getElementById(type === 'jobs' ? 'newJobPrice' : 'newMaterialPrice').value = '';
+
+    renderSettingsLists();
+    renderAll();
+}
+
+function deleteItem(type, id) {
+    if(!confirm("Вилучити цю позицію з бази?")) return;
+    if(type === 'jobs') jobs = jobs.filter(j => j.id !== id);
+    else materials = materials.filter(m => m.id !== id);
+    delete currentVolumes[type][id];
+    delete currentPrices[type][id];
+    renderSettingsLists();
+    renderAll();
+}
+
+function saveAllSettings() {
+    jobs.forEach(item => {
+        item.name = document.getElementById(`set-name-jobs-${item.id}`).value;
+        item.unit = document.getElementById(`set-unit-jobs-${item.id}`).value;
+        item.price = parseFloat(document.getElementById(`set-price-jobs-${item.id}`).value) || 0;
+        currentPrices.jobs[item.id] = item.price;
+    });
+
+    materials.forEach(item => {
+        item.category = document.getElementById(`set-cat-materials-${item.id}`).value;
+        item.name = document.getElementById(`set-name-materials-${item.id}`).value;
+        item.unit = document.getElementById(`set-unit-materials-${item.id}`).value;
+        item.price = parseFloat(document.getElementById(`set-price-materials-${item.id}`).value) || 0;
+        currentPrices.materials[item.id] = item.price;
+    });
+
+    localStorage.setItem('myCalcJobs', JSON.stringify(jobs));
+    localStorage.setItem('myCalcMaterials', JSON.stringify(materials));
+    renderAll();
+    alert("Усі зміни, включаючи перенесення матеріалів по категоріях, успішно збережено!");
+}
+
+function saveCurrentEstimate() {
+    const name = document.getElementById('estimateName').value.trim();
+    if(!name) { alert("Введіть назву кошторису!"); return; }
+
+    const saved = JSON.parse(localStorage.getItem('mySavedComboEst')) || [];
+    const totals = calculateTotals();
+
+    const data = {
+        id: Date.now(),
+        date: new Date().toLocaleString('uk-UA'),
+        name: name,
+        volumes: JSON.parse(JSON.stringify(currentVolumes)),
+        prices: JSON.parse(JSON.stringify(currentPrices)),
+        jobTotal: totals.jobs.toFixed(2),
+        matTotal: totals.materials.toFixed(2),
+        grandTotal: (totals.jobs + totals.materials).toFixed(2)
+    };
+
+    const idx = saved.findIndex(e => e.name === name);
+    if(idx > -1 && !confirm("Кошторис вже є. Перезаписати його?")) return;
+    
+    if(idx > -1) saved[idx] = data; else saved.push(data);
+    localStorage.setItem('mySavedComboEst', JSON.stringify(saved));
+    renderSavedEstimates();
+    alert(`Об'єкт "${name}" збережено в архів.`);
+}
+
+function renderSavedEstimates() {
+    const tbody = document.getElementById('savedEstimatesTableBody');
+    const saved = JSON.parse(localStorage.getItem('mySavedComboEst')) || [];
+    if(saved.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Архів порожній.</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = saved.map(e => `
+        <tr>
+            <td>${e.date}</td>
+            <td class="fw-bold text-primary">${e.name}</td>
+            <td>${e.jobTotal} грн</td>
+            <td>${e.matTotal} грн</td>
+            <td><mark class="fw-bold px-2 rounded">${e.grandTotal} грн</mark></td>
+            <td>
+                <button class="btn btn-sm btn-primary py-0" onclick="loadEstimate(${e.id})">📂 Відкрити</button>
+                <button class="btn btn-sm btn-danger py-0" onclick="deleteEstimate(${e.id})">🗑️</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function loadEstimate(id) {
+    const saved = JSON.parse(localStorage.getItem('mySavedComboEst')) || [];
+    const e = saved.find(x => x.id === id);
+    if(!e) return;
+
+    document.getElementById('estimateName').value = e.name;
+    currentVolumes = e.volumes || { jobs: {}, materials: {} };
+    currentPrices = e.prices || { jobs: {}, materials: {} };
+    renderAll();
+    alert(`Об'єкт завантажено.`);
+}
+
+function deleteEstimate(id) {
+    if(!confirm("Видалити цей кошторис з архіву?")) return;
+    let saved = JSON.parse(localStorage.getItem('mySavedComboEst')) || [];
+    saved = saved.filter(x => x.id !== id);
+    localStorage.setItem('mySavedComboEst', JSON.stringify(saved));
+    renderSavedEstimates();
+}
+
+function buildPrintHTML() {
+    const title = document.getElementById('estimateName').value || "Кошторис об'єкту";
+    let html = `<div style="font-family: 'Segoe UI', sans-serif; color: #000;">
+        <h2 style="text-align:center; font-weight: bold; margin-bottom: 5px;">${title}</h2>
+        <p style="text-align:center; color:#555; margin-bottom:25px;">Зведений кошторис (Роботи та Матеріали)</p>
+    `;
+
+    let totals = { jobs: 0, materials: 0 };
+
+    [['jobs', '🛠️ КОШТОРИС НА БУДІВЕЛЬНІ РОБОТИ', jobs, jobCategories], 
+     ['materials', '🧱 КОШТОРИС НА БУДІВЕЛЬНІ МАТЕРІАЛИ', materials, materialCategories]].forEach(([type, sectionTitle, list, categories]) => {
+        
+        let sectionHTML = '';
+        let hasDataInSection = false;
+
+        categories.forEach(cat => {
+            const catItems = list.filter(i => i.category === cat);
+            let rowsHTML = '';
+
+            catItems.forEach(item => {
+                const vol = currentVolumes[type][item.id] || 0;
+                if (vol <= 0) return;
+
+                const price = currentPrices[type][item.id] !== undefined ? currentPrices[type][item.id] : item.price;
+                const sum = vol * price;
+                totals[type] += sum;
+                hasDataInSection = true;
+
+                rowsHTML += `
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${item.name}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align:center;">${item.unit}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align:right;">${price.toFixed(2)}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align:center;">${vol}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align:right; font-weight:600;">${sum.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            if (rowsHTML) {
+                sectionHTML += `
+                    <h5 style="margin-top:15px; margin-bottom:5px; color:#444; font-weight:bold; text-transform:uppercase; font-size:14px;">${cat}</h5>
+                    <table style="width:100%; border-collapse: collapse; margin-bottom:15px; font-size:13px;">
+                        <thead><tr style="background-color:#f2f2f2;">
+                            <th style="border: 1px solid #ddd; padding: 6px; text-align:left;">Назва позиції</th>
+                            <th style="border: 1px solid #ddd; padding: 6px; text-align:center; width:70px;">Од. вим.</th>
+                            <th style="border: 1px solid #ddd; padding: 6px; text-align:right; width:110px;">Ціна (грн)</th>
+                            <th style="border: 1px solid #ddd; padding: 6px; text-align:center; width:80px;">Кіл-ть</th>
+                            <th style="border: 1px solid #ddd; padding: 6px; text-align:right; width:110px;">Сума (грн)</th>
+                        </tr></thead><tbody>${rowsHTML}</tbody>
+                    </table>
+                `;
+            }
+        });
+
+        if (hasDataInSection) {
+            html += `<h4 style="margin-top:25px; border-bottom: 2px solid #333; padding-bottom:3px; font-weight:bold; color:#111;">${sectionTitle}</h4>` + sectionHTML;
+            html += `<p style="text-align:right; font-weight:bold; margin-top:-5px; font-size:14px;">Разом за розділом: ${totals[type].toFixed(2)} грн</p>`;
+        }
+    });
+
+    const grandTotal = totals.jobs + totals.materials;
+    html += `
+        <div style="margin-top:35px; background:#222; color:#fff; padding:15px; border-radius:6px; font-size:15px;">
+            <table style="width:100%; color:#fff; font-size:14px;">
+                <tr><td>Всього за будівельні роботи:</td><td style="text-align:right;">${totals.jobs.toFixed(2)} грн</td></tr>
+                <tr><td>Всього за будівельні матеріали:</td><td style="text-align:right;">${totals.materials.toFixed(2)} грн</td></tr>
+                <tr style="font-size:18px; font-weight:bold;"><td style="padding-top:10px; border-top:1px solid #555;">ЗАГАЛЬНА ВАРТІСТЬ ОБ'ЄКТУ:</td><td style="padding-top:10px; border-top:1px solid #555; text-align:right; color:#00cbd6;">${grandTotal.toFixed(2)} грн</td></tr>
+            </table>
+        </div>
+    </div>`;
+
+    return html;
+}
+
+function openPreviewModal() {
+    const area = document.getElementById('previewPrintArea');
+    area.innerHTML = buildPrintHTML();
+    const myModal = new bootstrap.Modal(document.getElementById('previewModal'));
+    myModal.show();
+}
+
+function exportToPDF() {
+    const title = document.getElementById('estimateName').value || "Кошторис";
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = buildPrintHTML();
+    
+    const opt = {
+        margin: 12,
+        filename: `${title}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(tempDiv).save();
+}
+
+function exportToPDFFromPreview() {
+    const title = document.getElementById('estimateName').value || "Кошторис";
+    const element = document.getElementById('previewPrintArea');
+    const opt = {
+        margin: 12,
+        filename: `${title}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+    bootstrap.Modal.getInstance(document.getElementById('previewModal')).hide();
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
