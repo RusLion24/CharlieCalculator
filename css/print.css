@@ -1,0 +1,111 @@
+/* Друк кошторису. У діалозі друку браузера доступний пункт «Зберегти як PDF». */
+
+#printRoot {
+    display: none;
+}
+
+@page {
+    size: A4;
+    margin: 14mm 12mm;
+}
+
+@media print {
+    body {
+        padding: 0;
+        background: #fff;
+        color: #000;
+    }
+
+    /* На друк іде лише документ кошторису, а не робочий інтерфейс. */
+    body > .container,
+    #previewModal {
+        display: none !important;
+    }
+
+    #printRoot {
+        display: block;
+    }
+
+    .print-doc__title {
+        margin: 0 0 4px 0;
+        font-size: 20px;
+        color: #000;
+    }
+
+    .print-doc__meta {
+        margin: 0 0 16px 0;
+        font-size: 12px;
+        color: #333;
+    }
+
+    .print-doc table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+
+    .print-doc th,
+    .print-doc td {
+        border: 1px solid #999;
+        padding: 4px 6px;
+        text-align: left;
+    }
+
+    .print-doc th {
+        background: #eee !important;
+        color: #000;
+        font-weight: 700;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .print-doc .estimate-doc__numeric {
+        text-align: right;
+    }
+
+    .print-doc__section-title {
+        margin: 14px 0 6px 0;
+        font-size: 14px;
+    }
+
+    .print-doc__grand-total {
+        margin-top: 14px;
+        padding-top: 8px;
+        border-top: 2px solid #000;
+        font-size: 15px;
+        font-weight: 700;
+        text-align: right;
+    }
+
+    .print-doc__signatures {
+        display: flex;
+        gap: 30mm;
+        margin-top: 20mm;
+    }
+
+    .print-doc__signature {
+        flex: 1;
+        border-top: 1px solid #000;
+        padding-top: 4px;
+        font-size: 11px;
+    }
+
+    /* Шапка таблиці повторюється на кожній сторінці, рядки не розриваються. */
+    thead {
+        display: table-header-group;
+    }
+
+    tbody tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .print-doc__section {
+        break-inside: auto;
+    }
+
+    a[href]::after {
+        content: none;
+    }
+}

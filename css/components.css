@@ -1,0 +1,382 @@
+/* Повторювані елементи інтерфейсу: картки, таблиці, форми, кнопки, бейджі, модальне вікно. */
+
+.card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 25px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.card-header {
+    background: #f8fafc;
+    padding: 15px 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #475569;
+    font-size: 14px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.card--accent {
+    border: 2px dashed #0d6efd;
+}
+
+.card--accent .card-header {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.card-body--inline {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 15px;
+}
+
+th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    padding: 12px 20px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+td {
+    padding: 12px 20px;
+    border-bottom: 1px solid #edf2f7;
+}
+
+tr:hover td {
+    background-color: #f8fafc;
+}
+
+.col-order {
+    width: 100px;
+    text-align: center;
+}
+
+.cell-actions {
+    white-space: nowrap;
+}
+
+.cell-order {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.cell-empty {
+    color: #64748b;
+    text-align: center;
+}
+
+.cell-accent {
+    color: #0d6efd;
+    font-weight: 700;
+}
+
+.empty-state {
+    padding: 20px;
+    color: #64748b;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border 0.2s;
+    display: block;
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+.form-control--compact {
+    padding: 5px 10px;
+}
+
+select.form-control {
+    height: 42px;
+    cursor: pointer;
+    -webkit-appearance: select;
+    -moz-appearance: select;
+    appearance: select;
+}
+
+.inline-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.badge {
+    background: #64748b;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: #0d6efd;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #0b5ed7;
+}
+
+.btn-success {
+    background: #198754;
+    color: #fff;
+}
+
+.btn-success:hover {
+    background: #157347;
+}
+
+.btn-info {
+    background: #0dcaf0;
+    color: #fff;
+}
+
+.btn-info:hover {
+    background: #31d2f2;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: #bb2d3b;
+}
+
+.btn-secondary {
+    background: #475569;
+    color: #fff;
+}
+
+.btn-secondary:hover {
+    background: #334155;
+}
+
+.btn-outline-primary {
+    background: transparent;
+    border: 2px solid #0d6efd;
+    color: #0d6efd;
+}
+
+.btn-outline-primary:hover {
+    background: #0d6efd;
+    color: #fff;
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 6px;
+}
+
+/* Кнопки сортування порядку */
+.sort-btn {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    font-size: 12px;
+    padding: 4px 8px;
+    margin: 0 2px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #475569;
+    transition: background 0.2s;
+}
+
+.sort-btn:hover {
+    background: #cbd5e1;
+    color: #0f172a;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 950px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    background: #1e293b;
+    color: #fff;
+    padding: 15px 20px;
+    font-weight: 700;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.modal-header .close-modal {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.modal-body {
+    padding: 30px;
+    overflow-y: auto;
+    background: #f8fafc;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    background: #f1f5f9;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-radius: 0 0 12px 12px;
+}
+
+.category-badge {
+    display: inline-flex;
+    align-items: center;
+    background: #334155;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 5px;
+}
+
+.category-badge span.del {
+    color: #f87171;
+    cursor: pointer;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+.category-badge span.edit {
+    color: #60a5fa;
+    cursor: pointer;
+    margin-right: 8px;
+}
+
+/* Документ кошторису — використовується і в модалці перегляду, і при друку. */
+.estimate-doc__meta {
+    color: #64748b;
+    font-size: 14px;
+    margin: 0 0 20px 0;
+}
+
+.estimate-doc__section-title {
+    margin: 25px 0 10px 0;
+    font-size: 18px;
+    color: #1e293b;
+}
+
+.estimate-doc__section-title:first-of-type {
+    margin-top: 0;
+}
+
+.estimate-doc__subtotal-label {
+    text-align: right;
+    font-weight: 700;
+}
+
+.estimate-doc__subtotal-value {
+    font-weight: 700;
+}
+
+.estimate-doc__grand-total {
+    margin-top: 25px;
+    padding: 15px;
+    border-top: 2px solid #0d6efd;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: right;
+    color: #0d6efd;
+}
+
+.estimate-doc__signatures {
+    display: flex;
+    gap: 40px;
+    margin-top: 40px;
+}
+
+.estimate-doc__signature {
+    flex: 1;
+    border-top: 1px solid #94a3b8;
+    padding-top: 6px;
+    font-size: 13px;
+    color: #475569;
+}
+
+.estimate-doc__numeric {
+    text-align: right;
+}

@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+.AppleDouble
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Тимчасові файли вендорингу (npm pack)
+node_modules/
+*.tgz
+package-lock.json
+
+# Логи та редактори
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Локальні вивантаження бази
+building_calculator_db.json
+*.pdf
