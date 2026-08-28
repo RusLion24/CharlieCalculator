@@ -45,6 +45,17 @@ Calc.utils = (function () {
         return (date || new Date()).toLocaleDateString('uk-UA');
     }
 
+    /** Дата для імені файлу: сортується за алфавітом і не містить крапок. */
+    function formatDateIso(date) {
+        var value = date || new Date();
+        var month = String(value.getMonth() + 1);
+        var day = String(value.getDate());
+
+        return value.getFullYear() + '-' +
+            (month.length < 2 ? '0' + month : month) + '-' +
+            (day.length < 2 ? '0' + day : day);
+    }
+
     /** Прибирає символи, недопустимі в іменах файлів на Windows/macOS/Linux. */
     function sanitizeFileName(name) {
         return String(name || 'Кошторис')
@@ -65,6 +76,7 @@ Calc.utils = (function () {
         formatQuantity: formatQuantity,
         formatDateTime: formatDateTime,
         formatDate: formatDate,
+        formatDateIso: formatDateIso,
         sanitizeFileName: sanitizeFileName,
         byId: byId
     };

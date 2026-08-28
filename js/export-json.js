@@ -1,22 +1,49 @@
-/* Резервна копія бази: вивантаження і відновлення через JSON-файл. */
+/* Резервна копія: один файл містить прайс робіт, перелік матеріалів і архів кошторисів. */
 
 window.Calc = window.Calc || {};
 
 Calc.exportJson = (function () {
     'use strict';
 
+    var utils = Calc.utils;
     var store = Calc.store;
 
-    function exportDatabase() {
-        var payload = JSON.stringify(store.get(), null, 2);
-        var href = 'data:text/json;charset=utf-8,' + encodeURIComponent(payload);
+    function fileName() {
+        return Calc.config.EXPORT_FILE_NAME + '_' + utils.formatDateIso() + '.json';
+    }
+
+    /**
+     * Safari на iPhone ігнорує атрибут download для data:-посилань і замість
+     * збереження просто відкриває JSON, тому файл віддаємо через Blob.
+     */
+    function download(payload, name) {
+        var blob = new Blob([payload], { type: 'application/json;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
         var anchor = document.createElement('a');
 
-        anchor.setAttribute('href', href);
-        anchor.setAttribute('download', Calc.config.EXPORT_FILE_NAME);
+        anchor.href = url;
+        anchor.download = name;
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
+
+        // Посилання має пережити клік, інакше Safari не встигає забрати файл.
+        setTimeout(function () {
+            URL.revokeObjectURL(url);
+        }, 1000);
+    }
+
+    function exportDatabase() {
+        download(JSON.stringify(store.get(), null, 2), fileName());
+    }
+
+    function importedSummary() {
+        var data = store.get();
+
+        return 'Дані імпортовано:\n' +
+            '• робіт: ' + data.jobs.length + '\n' +
+            '• матеріалів: ' + data.materials.length + '\n' +
+            '• збережених кошторисів: ' + data.estimates.length;
     }
 
     function importDatabase(event, onDone) {
@@ -44,7 +71,7 @@ Calc.exportJson = (function () {
 
             store.resetCurrent();
             if (typeof onDone === 'function') onDone();
-            alert('Базу даних успішно імпортовано та оновлено!');
+            alert(importedSummary());
         };
 
         reader.onerror = function () {

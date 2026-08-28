@@ -24,9 +24,7 @@ Calc.render = (function () {
     function all() {
         calculator('job');
         calculator('material');
-        settingsCategories();
         settingsTables();
-        categorySelect();
         savedEstimates();
         totals();
         editMode();
@@ -35,7 +33,7 @@ Calc.render = (function () {
     function qtyCell(type, item) {
         var qty = store.getQty(type, item.id);
 
-        return '<td>' +
+        return '<td class="cell-qty" data-label="К-сть">' +
             '<input type="number" class="form-control form-control--compact" min="0" placeholder="0"' +
             ' aria-label="Кількість: ' + esc(item.name) + '"' +
             ' value="' + (qty ? esc(utils.formatQuantity(qty)) : '') + '"' +
@@ -48,7 +46,7 @@ Calc.render = (function () {
         var key = store.qtyKey('job', item.id);
         var edited = estimate.isPriceEdited('job', item.id);
 
-        return '<td class="cell-price">' +
+        return '<td class="cell-price" data-label="Ціна">' +
             '<input type="number" min="0" step="0.01"' +
             ' id="price_' + key + '"' +
             ' class="form-control form-control--compact price-input' + (edited ? ' is-price-edited' : '') + '"' +
@@ -64,7 +62,7 @@ Calc.render = (function () {
     }
 
     function commentCell(item) {
-        return '<td>' +
+        return '<td class="cell-comment" data-label="Коментар">' +
             '<input type="text" class="form-control form-control--compact"' +
             ' id="comment_' + store.qtyKey('material', item.id) + '"' +
             ' placeholder="Коментар"' +
@@ -76,27 +74,26 @@ Calc.render = (function () {
 
     function calculatorRow(type, item) {
         var head = '<tr>' +
-            '<td><span class="badge">' + esc(item.cat) + '</span></td>' +
-            '<td>' + esc(item.name) + '</td>' +
-            '<td>' + esc(item.unit) + '</td>';
+            '<td class="cell-name">' + esc(item.name) + '</td>' +
+            '<td data-label="Од.">' + esc(item.unit) + '</td>';
 
         if (type === 'material') {
             return head + qtyCell(type, item) + commentCell(item) + '</tr>';
         }
 
         return head + priceCell(item) + qtyCell(type, item) +
-            '<td id="total_' + store.qtyKey(type, item.id) + '">' +
+            '<td class="cell-total" data-label="Разом" id="total_' + store.qtyKey(type, item.id) + '">' +
             money(estimate.lineTotal(type, item.id)) +
             '</td></tr>';
     }
 
     function calculatorHead(type) {
         if (type === 'material') {
-            return '<th>Категорія</th><th>Назва</th><th>Од. вим.</th>' +
+            return '<th>Назва</th><th>Од. вим.</th>' +
                 '<th style="width:150px;">Кількість</th><th>Коментар</th>';
         }
 
-        return '<th>Категорія</th><th>Назва</th><th>Од. вим.</th><th style="width:170px;">Ціна (грн)</th>' +
+        return '<th>Назва</th><th>Од. вим.</th><th style="width:170px;">Ціна (грн)</th>' +
             '<th style="width:150px;">Кількість</th><th>Разом (грн)</th>';
     }
 
@@ -163,45 +160,11 @@ Calc.render = (function () {
         }
     }
 
-    function categorySelect() {
-        var select = utils.byId('newItemCat');
-        if (!select) return;
-
-        var previous = select.value;
-        select.innerHTML = store.get().categories.map(function (name) {
-            return '<option value="' + esc(name) + '">' + esc(name) + '</option>';
-        }).join('');
-
-        if (previous) select.value = previous;
-    }
-
-    function settingsCategories() {
-        var container = utils.byId('categoriesList');
-        if (!container) return;
-
-        var categories = store.get().categories;
-
-        if (categories.length === 0) {
-            container.innerHTML = '<div class="section-hint">Категорій ще немає.</div>';
-            return;
-        }
-
-        // Індекс, а не назва: у назві можуть бути лапки, які поламали б inline-обробник.
-        container.innerHTML = categories.map(function (name, index) {
-            return '<span class="category-badge">' +
-                '<span class="edit" onclick="editCategory(' + index + ')">✏️</span>' +
-                esc(name) +
-                '<span class="del" onclick="deleteCategory(' + index + ')">&times;</span>' +
-                '</span>';
-        }).join('');
-    }
-
     function settingsRow(type, item, index) {
-        var cells = '<td><span class="badge">' + esc(item.cat) + '</span></td>' +
-            '<td>' + esc(item.name) + '</td>' +
-            '<td>' + esc(item.unit) + '</td>';
+        var cells = '<td class="cell-name">' + esc(item.name) + '</td>' +
+            '<td data-label="Од.">' + esc(item.unit) + '</td>';
 
-        if (type === 'job') cells += '<td>' + money(item.price) + '</td>';
+        if (type === 'job') cells += '<td data-label="Ціна">' + money(item.price) + '</td>';
 
         return '<tr>' + cells +
             '<td class="cell-order">' +
@@ -221,7 +184,7 @@ Calc.render = (function () {
             if (!body) return;
 
             var items = store.items(type);
-            var columns = type === 'job' ? 6 : 5;
+            var columns = type === 'job' ? 5 : 4;
 
             if (items.length === 0) {
                 body.innerHTML = '<tr><td colspan="' + columns + '" class="cell-empty">Позицій ще немає</td></tr>';
@@ -249,9 +212,9 @@ Calc.render = (function () {
 
         body.innerHTML = list.map(function (est) {
             return '<tr' + (est.id === editingId ? ' class="is-editing"' : '') + '>' +
-                '<td>' + esc(est.date) + '</td>' +
-                '<td><strong>' + esc(est.name) + '</strong></td>' +
-                '<td class="cell-accent">' + money(est.jobsTotal) + ' грн</td>' +
+                '<td class="cell-name"><strong>' + esc(est.name) + '</strong></td>' +
+                '<td data-label="Дата">' + esc(est.date) + '</td>' +
+                '<td class="cell-accent" data-label="Всього">' + money(est.jobsTotal) + ' грн</td>' +
                 '<td class="cell-actions">' +
                     '<button class="btn btn-success btn-sm" title="Редагувати" onclick="editArchivedEstimate(' + est.id + ')">✏️</button> ' +
                     '<button class="btn btn-info btn-sm" title="Переглянути" onclick="viewArchivedEstimate(' + est.id + ')">👁️</button> ' +
@@ -271,8 +234,6 @@ Calc.render = (function () {
         linePriceValue: linePriceValue,
         totals: totals,
         editMode: editMode,
-        categorySelect: categorySelect,
-        settingsCategories: settingsCategories,
         settingsTables: settingsTables,
         savedEstimates: savedEstimates
     };

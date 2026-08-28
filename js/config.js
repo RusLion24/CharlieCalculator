@@ -31,5 +31,6 @@ Calc.config = {
         fontName: 'Roboto'
     },
 
-    EXPORT_FILE_NAME: 'building_calculator_db.json'
+    /** Дату й розширення додає export-json.js. */
+    EXPORT_FILE_NAME: 'building_calculator_db'
 };

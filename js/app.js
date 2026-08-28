@@ -65,36 +65,6 @@ Calc.app = (function () {
         store.setComment('material', id, value);
     }
 
-    function addCategory() {
-        var input = utils.byId('newCatName');
-        if (!notifyError(catalog.addCategory(input.value))) return;
-
-        input.value = '';
-        render.all();
-    }
-
-    function editCategory(index) {
-        var current = catalog.categories()[index];
-        if (current === undefined) return;
-
-        var next = prompt('Редагувати назву категорії:', current);
-        if (next === null) return;
-
-        var result = catalog.renameCategory(index, next);
-        if (result.error) alert(result.error);
-        if (result.ok) render.all();
-    }
-
-    function deleteCategory(index) {
-        var name = catalog.categories()[index];
-        if (name === undefined) return;
-
-        var message = 'Видалити категорію "' + name + '"? Всі пов\'язані елементи залишаться, але втратять категорію.';
-        if (!confirm(message)) return;
-
-        if (notifyError(catalog.removeCategory(index))) render.all();
-    }
-
     /** Ціна є лише в робіт, тому для матеріалів поле ховаємо. */
     function onItemTypeChange() {
         var type = utils.byId('newItemType').value;
@@ -108,7 +78,6 @@ Calc.app = (function () {
     function addNewItem() {
         var type = utils.byId('newItemType').value;
         var fields = {
-            cat: utils.byId('newItemCat').value,
             name: utils.byId('newItemName').value,
             unit: utils.byId('newItemUnit').value,
             price: utils.byId('newItemPrice').value
@@ -261,9 +230,6 @@ Calc.app = (function () {
         updateLinePrice: updateLinePrice,
         resetLinePrice: resetLinePrice,
         updateComment: updateComment,
-        addCategory: addCategory,
-        editCategory: editCategory,
-        deleteCategory: deleteCategory,
         onItemTypeChange: onItemTypeChange,
         addNewItem: addNewItem,
         editItem: editItem,

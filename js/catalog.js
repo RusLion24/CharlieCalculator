@@ -1,4 +1,4 @@
-/* Операції над базою прайсів: категорії, позиції, порядок рядків.
+/* Операції над базою прайсів: позиції та порядок рядків.
    Модуль не читає DOM — усі дані приходять аргументами. */
 
 window.Calc = window.Calc || {};
@@ -8,62 +8,6 @@ Calc.catalog = (function () {
 
     var store = Calc.store;
     var utils = Calc.utils;
-
-    function categories() {
-        return store.get().categories;
-    }
-
-    function addCategory(name) {
-        var trimmed = String(name || '').trim();
-        if (!trimmed) return { ok: false, error: 'Вкажіть назву категорії' };
-        if (categories().indexOf(trimmed) !== -1) {
-            return { ok: false, error: 'Категорія вже існує' };
-        }
-        categories().push(trimmed);
-        store.save();
-        return { ok: true };
-    }
-
-    function renameCategory(index, newName) {
-        var list = categories();
-        var oldName = list[index];
-        var trimmed = String(newName || '').trim();
-
-        if (oldName === undefined) return { ok: false, error: 'Категорію не знайдено' };
-        if (!trimmed || trimmed === oldName) return { ok: false };
-        if (list.indexOf(trimmed) !== -1) {
-            return { ok: false, error: 'Категорія з такою назвою вже існує' };
-        }
-
-        list[index] = trimmed;
-
-        // Категорія прив'язана рядком, тому перейменування треба протягнути по позиціях.
-        ['job', 'material'].forEach(function (type) {
-            store.items(type).forEach(function (item) {
-                if (item.cat === oldName) item.cat = trimmed;
-            });
-        });
-
-        store.save();
-        return { ok: true };
-    }
-
-    function removeCategory(index) {
-        var list = categories();
-        var name = list[index];
-        if (name === undefined) return { ok: false, error: 'Категорію не знайдено' };
-
-        list.splice(index, 1);
-
-        ['job', 'material'].forEach(function (type) {
-            store.items(type).forEach(function (item) {
-                if (item.cat === name) item.cat = '';
-            });
-        });
-
-        store.save();
-        return { ok: true, name: name };
-    }
 
     function nextId(type) {
         var list = store.items(type);
@@ -88,7 +32,7 @@ Calc.catalog = (function () {
 
         var item = {
             id: nextId(type),
-            cat: String(fields.cat || ''),
+            cat: '',
             name: name,
             unit: unit
         };
@@ -106,7 +50,6 @@ Calc.catalog = (function () {
 
         if (fields.name !== undefined) item.name = String(fields.name).trim() || item.name;
         if (fields.unit !== undefined) item.unit = String(fields.unit).trim() || item.unit;
-        if (fields.cat !== undefined) item.cat = String(fields.cat);
         if (type === 'job' && fields.price !== undefined) item.price = utils.toNumber(fields.price);
 
         store.save();
@@ -137,10 +80,6 @@ Calc.catalog = (function () {
     }
 
     return {
-        categories: categories,
-        addCategory: addCategory,
-        renameCategory: renameCategory,
-        removeCategory: removeCategory,
         addItem: addItem,
         updateItem: updateItem,
         removeItem: removeItem,

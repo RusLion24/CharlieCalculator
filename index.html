@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/responsive.css">
     <link rel="stylesheet" href="css/print.css">
 </head>
 <body>
@@ -55,7 +56,7 @@
     <!-- ВКЛАДКА 1: РОБОТИ -->
     <div id="jobs-content" class="tab-pane active">
         <div class="card">
-            <div class="card-header">Калькулятор Робіт за категоріями</div>
+            <div class="card-header">Калькулятор робіт</div>
             <div id="jobsCalculatorContainer" class="table-responsive"></div>
         </div>
     </div>
@@ -63,7 +64,7 @@
     <!-- ВКЛАДКА 2: МАТЕРІАЛИ -->
     <div id="materials-content" class="tab-pane">
         <div class="card">
-            <div class="card-header">Калькулятор Матеріалів за категоріями</div>
+            <div class="card-header">Калькулятор матеріалів</div>
             <div id="materialsCalculatorContainer" class="table-responsive"></div>
         </div>
     </div>
@@ -77,18 +78,7 @@
                 <button class="btn btn-success" onclick="exportDatabase()">📥 Експорт бази (.json)</button>
                 <button class="btn btn-info" onclick="document.getElementById('importFileInput').click()">📤 Імпорт бази (.json)</button>
                 <input type="file" id="importFileInput" accept=".json" aria-label="Файл бази даних (.json)" style="display:none" onchange="importDatabase(event)">
-                <small class="section-hint">Дозволяє переносити ваші прайси, налаштований порядок елементів та категорії на інший пристрій.</small>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">Управління категоріями</div>
-            <div class="card-body">
-                <div class="inline-form">
-                    <input type="text" id="newCatName" class="form-control" placeholder="Назва нової категорії" aria-label="Назва нової категорії">
-                    <button class="btn btn-primary" onclick="addCategory()">Додати</button>
-                </div>
-                <div id="categoriesList"></div>
+                <small class="section-hint">Один файл містить усе: прайс робіт, перелік матеріалів, порядок рядків і збережені кошториси. Так база переноситься на інший пристрій.</small>
             </div>
         </div>
 
@@ -100,7 +90,6 @@
                         <option value="job">Робота 🛠️</option>
                         <option value="material">Матеріал 🧱</option>
                     </select>
-                    <select id="newItemCat" class="form-control" aria-label="Категорія позиції"></select>
                     <input type="text" id="newItemName" class="form-control" placeholder="Назва" aria-label="Назва позиції">
                     <input type="text" id="newItemUnit" class="form-control" placeholder="Од. виміру" aria-label="Одиниця виміру">
                     <input type="number" id="newItemPrice" class="form-control" placeholder="Ціна (грн)" aria-label="Ціна в гривнях">
@@ -115,7 +104,6 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Категорія</th>
                             <th>Назва роботи</th>
                             <th>Од. вим.</th>
                             <th>Ціна (грн)</th>
@@ -134,7 +122,6 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Категорія</th>
                             <th>Назва матеріалу</th>
                             <th>Од. вим.</th>
                             <th class="col-order">Порядок</th>
@@ -155,8 +142,8 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Дата</th>
                             <th>Назва об'єкту</th>
+                            <th>Дата</th>
                             <th>Всього</th>
                             <th>Дії</th>
                         </tr>

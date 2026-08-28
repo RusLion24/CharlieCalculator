@@ -1,0 +1,186 @@
+/* Вигляд на вузькому екрані. Таблиці застосунку перетворюються на картки:
+   назва займає весь рядок, а од. виміру, ціна, кількість і сума стоять під нею.
+   Документ кошторису (перегляд і друк) лишається таблицею — його не чіпаємо. */
+
+@media (max-width: 768px) {
+    body {
+        padding: 8px;
+    }
+
+    .container {
+        padding: 0;
+    }
+
+    header {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    h1 {
+        font-size: 22px;
+    }
+
+    .total-display {
+        width: 100%;
+        padding: 12px 16px;
+    }
+
+    .nav-tabs {
+        flex-wrap: wrap;
+        gap: 6px;
+        border-bottom: none;
+        margin-bottom: 16px;
+    }
+
+    .nav-tabs button {
+        flex: 1 1 45%;
+        margin-bottom: 0;
+        padding: 10px 8px;
+        font-size: 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .nav-tabs button.active {
+        border: 1px solid #0d6efd;
+    }
+
+    .controls-row {
+        flex-direction: column;
+        align-items: stretch;
+        margin-bottom: 16px;
+    }
+
+    .controls-row > div {
+        min-width: 0;
+    }
+
+    .btn-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .card {
+        margin-bottom: 16px;
+    }
+
+    .card-header {
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+
+    .card-body {
+        padding: 14px;
+    }
+
+    /* Safari на iPhone зумить сторінку, якщо шрифт у полі дрібніший за 16px. */
+    .form-control {
+        font-size: 16px;
+    }
+
+    .table-responsive {
+        overflow-x: visible;
+    }
+
+    .table-responsive thead {
+        display: none;
+    }
+
+    .table-responsive tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 14px;
+        padding: 12px 14px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .table-responsive td {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 1 1 auto;
+        padding: 0;
+        border: none;
+    }
+
+    .table-responsive td[data-label]::before {
+        content: attr(data-label) ":";
+        color: #64748b;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    /* Назва — окремий рядок на всю ширину, з переносом на кілька рядків. */
+    .table-responsive td.cell-name {
+        flex: 0 0 100%;
+        font-weight: 600;
+        font-size: 15px;
+        color: #1e293b;
+    }
+
+    .table-responsive td.cell-comment,
+    .table-responsive td.cell-empty {
+        flex: 0 0 100%;
+    }
+
+    .table-responsive td.cell-price {
+        flex: 1 1 150px;
+    }
+
+    .table-responsive td.cell-qty {
+        flex: 1 1 120px;
+    }
+
+    .table-responsive td.cell-price .form-control,
+    .table-responsive td.cell-qty .form-control {
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 60px;
+    }
+
+    .table-responsive td.cell-order,
+    .table-responsive td.cell-actions {
+        flex: 0 0 auto;
+        flex-wrap: wrap;
+        white-space: normal;
+        gap: 4px;
+    }
+
+    /* Підсвітка рядка, який редагують, має накривати всю картку, а не окремі клітинки. */
+    .table-responsive tr.is-editing {
+        background-color: #fff7ed;
+    }
+
+    .table-responsive tr.is-editing td,
+    .table-responsive tr:hover td {
+        background-color: transparent;
+    }
+
+    /* Документ у модалці не ламаємо: він гортається вбік. */
+    .modal {
+        padding: 8px;
+    }
+
+    .modal-body {
+        padding: 14px;
+    }
+
+    .estimate-doc__section {
+        overflow-x: auto;
+    }
+
+    .estimate-doc__section table {
+        font-size: 13px;
+    }
+
+    .estimate-doc__grand-total {
+        font-size: 17px;
+        padding: 12px 0 0 0;
+    }
+
+    .edit-mode-bar {
+        padding: 10px 14px;
+    }
+}
