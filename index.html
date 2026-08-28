@@ -20,28 +20,32 @@
             <p class="subtitle">Руслан Черніченко 095-893-03-22 </p>
         </div>
         <div id="mainTotalDisplay" class="total-display">
-            <div>Роботи: <span id="headerJobsTotal">0.00</span> грн</div>
-            <div>Матеріали: <span id="headerMaterialsTotal">0.00</span> грн</div>
             <div class="grand-total">Всього: <span id="headerGrandTotal">0.00</span> грн</div>
         </div>
     </header>
 
     <!-- Головна навігація -->
     <div class="nav-tabs">
-        <button class="tab-link active" onclick="switchTab(event, 'jobs-content')">🛠️ Розрахунок Робіт</button>
-        <button class="tab-link" onclick="switchTab(event, 'materials-content')">🧱 Розрахунок Матеріалів</button>
-        <button class="tab-link" onclick="switchTab(event, 'settings-content')">⚙️ Налаштування бази</button>
-        <button class="tab-link" onclick="switchTab(event, 'saved-content')">💾 Архів Кошторисів</button>
+        <button class="tab-link active" data-tab="jobs-content" onclick="switchTab('jobs-content')">🛠️ Розрахунок Робіт</button>
+        <button class="tab-link" data-tab="materials-content" onclick="switchTab('materials-content')">🧱 Розрахунок Матеріалів</button>
+        <button class="tab-link" data-tab="settings-content" onclick="switchTab('settings-content')">⚙️ Налаштування бази</button>
+        <button class="tab-link" data-tab="saved-content" onclick="switchTab('saved-content')">💾 Архів Кошторисів</button>
+    </div>
+
+    <!-- Режим редагування кошторису з архіву -->
+    <div id="editModeBar" class="edit-mode-bar" hidden>
+        <span id="editModeInfo" class="edit-mode-bar__info"></span>
+        <button class="btn btn-secondary btn-sm" onclick="exitEditMode()">Завершити редагування</button>
     </div>
 
     <!-- Елементи керування -->
     <div class="controls-row">
         <div>
             <label class="field-label" for="estimateName">Назва об'єкту / кошторису:</label>
-            <input type="text" id="estimateName" class="form-control" value="Кошторис об'єкту (Новий)">
+            <input type="text" id="estimateName" class="form-control">
         </div>
         <div class="btn-group">
-            <button class="btn btn-success" onclick="saveCurrentEstimate()">💾 Зберегти в архів</button>
+            <button class="btn btn-success" id="saveEstimateBtn" onclick="saveCurrentEstimate()">💾 Зберегти в архів</button>
             <button class="btn btn-info" onclick="openPreviewModal()">👁️ Попередній перегляд</button>
             <button class="btn btn-secondary" onclick="printCurrentEstimate()">🖨️ Друк / Зберегти як PDF</button>
             <button class="btn btn-primary" onclick="downloadCurrentPdf()">📄 Завантажити PDF</button>
@@ -92,7 +96,7 @@
             <div class="card-header">Додати нову позицію (Робота / Матеріал)</div>
             <div class="card-body">
                 <div class="row-grid">
-                    <select id="newItemType" class="form-control" aria-label="Тип позиції">
+                    <select id="newItemType" class="form-control" aria-label="Тип позиції" onchange="onItemTypeChange()">
                         <option value="job">Робота 🛠️</option>
                         <option value="material">Матеріал 🧱</option>
                     </select>
@@ -133,7 +137,6 @@
                             <th>Категорія</th>
                             <th>Назва матеріалу</th>
                             <th>Од. вим.</th>
-                            <th>Ціна (грн)</th>
                             <th class="col-order">Порядок</th>
                             <th>Дії</th>
                         </tr>
@@ -154,8 +157,6 @@
                         <tr>
                             <th>Дата</th>
                             <th>Назва об'єкту</th>
-                            <th>Сума робіт</th>
-                            <th>Сума мат.</th>
                             <th>Всього</th>
                             <th>Дії</th>
                         </tr>

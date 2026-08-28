@@ -1,4 +1,4 @@
-/* Єдине джерело істини: база прайсів у localStorage + обсяги поточного кошторису в пам'яті. */
+/* Єдине джерело істини: база прайсів у localStorage + стан поточного кошторису в пам'яті. */
 
 window.Calc = window.Calc || {};
 
@@ -9,13 +9,24 @@ Calc.store = (function () {
     var STORAGE_KEY = Calc.config.STORAGE_KEY;
 
     var data = read();
+
+    /* Стан поточного кошторису. Навмисно не потрапляє в localStorage: правка ціни
+       діє лише на цей кошторис і не змінює базу. */
     var quantities = {};
+    var priceOverrides = {};
+    var comments = {};
+    var editingId = null;
 
     function clone(value) {
         return JSON.parse(JSON.stringify(value));
     }
 
-    function normalizeItems(list) {
+    function text(value) {
+        return value === null || value === undefined ? '' : String(value);
+    }
+
+    /** Ціна є лише в робіт: матеріали — це перелік без грошей. */
+    function normalizeItems(list, type) {
         if (!Array.isArray(list)) return [];
         return list
             .filter(function (item) {
@@ -23,13 +34,15 @@ Calc.store = (function () {
             })
             .map(function (item, index) {
                 var id = parseInt(item.id, 10);
-                return {
+                var normalized = {
                     id: isFinite(id) ? id : index + 1,
-                    cat: item.cat === null || item.cat === undefined ? '' : String(item.cat),
-                    name: item.name === null || item.name === undefined ? '' : String(item.name),
-                    unit: item.unit === null || item.unit === undefined ? '' : String(item.unit),
-                    price: utils.toNumber(item.price)
+                    cat: text(item.cat),
+                    name: text(item.name),
+                    unit: text(item.unit)
                 };
+
+                if (type === 'job') normalized.price = utils.toNumber(item.price);
+                return normalized;
             });
     }
 
@@ -49,13 +62,16 @@ Calc.store = (function () {
                     materialsTotal: utils.toNumber(est.materialsTotal),
                     grandTotal: utils.toNumber(est.grandTotal),
                     items: items.map(function (item) {
+                        var refId = parseInt(item.refId, 10);
                         return {
                             type: item.type === 'material' ? 'material' : 'job',
-                            name: String(item.name || ''),
-                            cat: String(item.cat || ''),
-                            unit: String(item.unit || ''),
+                            refId: isFinite(refId) ? refId : null,
+                            name: text(item.name),
+                            cat: text(item.cat),
+                            unit: text(item.unit),
                             price: utils.toNumber(item.price),
-                            qty: utils.toNumber(item.qty)
+                            qty: utils.toNumber(item.qty),
+                            comment: text(item.comment)
                         };
                     })
                 };
@@ -70,8 +86,8 @@ Calc.store = (function () {
         }
         return {
             categories: raw.categories.map(String),
-            jobs: normalizeItems(raw.jobs),
-            materials: normalizeItems(raw.materials),
+            jobs: normalizeItems(raw.jobs, 'job'),
+            materials: normalizeItems(raw.materials, 'material'),
             estimates: normalizeEstimates(raw.estimates)
         };
     }
@@ -142,8 +158,44 @@ Calc.store = (function () {
         quantities[qtyKey(type, id)] = utils.toNumber(value);
     }
 
-    function clearQty() {
+    function hasPriceOverride(type, id) {
+        return Object.prototype.hasOwnProperty.call(priceOverrides, qtyKey(type, id));
+    }
+
+    function getPriceOverride(type, id) {
+        return priceOverrides[qtyKey(type, id)];
+    }
+
+    function setPriceOverride(type, id, value) {
+        priceOverrides[qtyKey(type, id)] = utils.toNumber(value);
+    }
+
+    function clearPriceOverride(type, id) {
+        delete priceOverrides[qtyKey(type, id)];
+    }
+
+    function getComment(type, id) {
+        return comments[qtyKey(type, id)] || '';
+    }
+
+    function setComment(type, id, value) {
+        comments[qtyKey(type, id)] = text(value);
+    }
+
+    function getEditing() {
+        return editingId;
+    }
+
+    function setEditing(id) {
+        editingId = id === null || id === undefined ? null : utils.toNumber(id);
+    }
+
+    /** Скидає весь поточний кошторис: обсяги, правки цін, коментарі, режим редагування. */
+    function resetCurrent() {
         quantities = {};
+        priceOverrides = {};
+        comments = {};
+        editingId = null;
     }
 
     return {
@@ -156,6 +208,14 @@ Calc.store = (function () {
         qtyKey: qtyKey,
         getQty: getQty,
         setQty: setQty,
-        clearQty: clearQty
+        hasPriceOverride: hasPriceOverride,
+        getPriceOverride: getPriceOverride,
+        setPriceOverride: setPriceOverride,
+        clearPriceOverride: clearPriceOverride,
+        getComment: getComment,
+        setComment: setComment,
+        getEditing: getEditing,
+        setEditing: setEditing,
+        resetCurrent: resetCurrent
     };
 })();

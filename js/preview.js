@@ -11,21 +11,49 @@ Calc.preview = (function () {
     var esc = utils.escapeHtml;
     var money = utils.formatMoney;
 
-    var HEADERS = ['№', 'Назва', 'Од.', 'Ціна', 'К-сть', 'Сума'];
+    var JOB_HEADERS = ['№', 'Назва', 'Од.', 'Ціна', 'К-сть', 'Сума'];
+    var MATERIAL_HEADERS = ['№', 'Назва', 'Од.', 'К-сть'];
 
-    function sectionHtml(section, prefix) {
-        var rows = section.lines.map(function (line, index) {
-            return '<tr>' +
-                '<td>' + (index + 1) + '</td>' +
-                '<td>' + esc(line.name) + '</td>' +
-                '<td>' + esc(line.unit) + '</td>' +
+    function headers(section) {
+        if (section.kind !== 'material') return JOB_HEADERS;
+        return section.showComment ? MATERIAL_HEADERS.concat('Коментар') : MATERIAL_HEADERS;
+    }
+
+    function rowHtml(section, line, index) {
+        var cells = '<td>' + (index + 1) + '</td>' +
+            '<td>' + esc(line.name) + '</td>' +
+            '<td>' + esc(line.unit) + '</td>';
+
+        if (section.kind !== 'material') {
+            return '<tr>' + cells +
                 '<td class="estimate-doc__numeric">' + money(line.price) + '</td>' +
                 '<td class="estimate-doc__numeric">' + esc(utils.formatQuantity(line.qty)) + '</td>' +
                 '<td class="estimate-doc__numeric">' + money(line.total) + '</td>' +
                 '</tr>';
+        }
+
+        cells += '<td class="estimate-doc__numeric">' + esc(utils.formatQuantity(line.qty)) + '</td>';
+        if (section.showComment) cells += '<td>' + esc(line.comment) + '</td>';
+
+        return '<tr>' + cells + '</tr>';
+    }
+
+    /** Підсумковий рядок є лише в робіт: у матеріалів немає грошей. */
+    function subtotalHtml(section) {
+        if (section.kind === 'material') return '';
+
+        return '<tr>' +
+            '<td colspan="5" class="estimate-doc__subtotal-label">' + esc(section.totalLabel) + '</td>' +
+            '<td class="estimate-doc__subtotal-value estimate-doc__numeric">' + money(section.total) + '</td>' +
+            '</tr>';
+    }
+
+    function sectionHtml(section, prefix) {
+        var rows = section.lines.map(function (line, index) {
+            return rowHtml(section, line, index);
         }).join('');
 
-        var head = HEADERS.map(function (title) {
+        var head = headers(section).map(function (title) {
             return '<th>' + title + '</th>';
         }).join('');
 
@@ -33,12 +61,7 @@ Calc.preview = (function () {
             '<div class="' + prefix + '__section">' +
             '<table>' +
                 '<thead><tr>' + head + '</tr></thead>' +
-                '<tbody>' + rows +
-                    '<tr>' +
-                        '<td colspan="5" class="estimate-doc__subtotal-label">' + esc(section.totalLabel) + '</td>' +
-                        '<td class="estimate-doc__subtotal-value estimate-doc__numeric">' + money(section.total) + '</td>' +
-                    '</tr>' +
-                '</tbody>' +
+                '<tbody>' + rows + subtotalHtml(section) + '</tbody>' +
             '</table>' +
             '</div>';
     }

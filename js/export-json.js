@@ -42,7 +42,7 @@ Calc.exportJson = (function () {
                 return;
             }
 
-            store.clearQty();
+            store.resetCurrent();
             if (typeof onDone === 'function') onDone();
             alert('Базу даних успішно імпортовано та оновлено!');
         };

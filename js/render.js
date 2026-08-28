@@ -29,6 +29,75 @@ Calc.render = (function () {
         categorySelect();
         savedEstimates();
         totals();
+        editMode();
+    }
+
+    function qtyCell(type, item) {
+        var qty = store.getQty(type, item.id);
+
+        return '<td>' +
+            '<input type="number" class="form-control form-control--compact" min="0" placeholder="0"' +
+            ' aria-label="Кількість: ' + esc(item.name) + '"' +
+            ' value="' + (qty ? esc(utils.formatQuantity(qty)) : '') + '"' +
+            ' oninput="updateQty(\'' + type + '\', ' + item.id + ', this.value)">' +
+            '</td>';
+    }
+
+    /** Ціну можна виправити прямо в розрахунку — правка діє лише на цей кошторис. */
+    function priceCell(item) {
+        var key = store.qtyKey('job', item.id);
+        var edited = estimate.isPriceEdited('job', item.id);
+
+        return '<td class="cell-price">' +
+            '<input type="number" min="0" step="0.01"' +
+            ' id="price_' + key + '"' +
+            ' class="form-control form-control--compact price-input' + (edited ? ' is-price-edited' : '') + '"' +
+            ' aria-label="Ціна: ' + esc(item.name) + '"' +
+            ' value="' + money(estimate.priceOf('job', item.id)) + '"' +
+            ' oninput="updateLinePrice(' + item.id + ', this.value)">' +
+            '<button type="button" class="sort-btn price-reset"' +
+            ' id="reset_' + key + '"' +
+            (edited ? '' : ' hidden') +
+            ' title="Повернути ціну з бази: ' + money(item.price) + '"' +
+            ' onclick="resetLinePrice(' + item.id + ')">↺</button>' +
+            '</td>';
+    }
+
+    function commentCell(item) {
+        return '<td>' +
+            '<input type="text" class="form-control form-control--compact"' +
+            ' id="comment_' + store.qtyKey('material', item.id) + '"' +
+            ' placeholder="Коментар"' +
+            ' aria-label="Коментар: ' + esc(item.name) + '"' +
+            ' value="' + esc(store.getComment('material', item.id)) + '"' +
+            ' oninput="updateComment(' + item.id + ', this.value)">' +
+            '</td>';
+    }
+
+    function calculatorRow(type, item) {
+        var head = '<tr>' +
+            '<td><span class="badge">' + esc(item.cat) + '</span></td>' +
+            '<td>' + esc(item.name) + '</td>' +
+            '<td>' + esc(item.unit) + '</td>';
+
+        if (type === 'material') {
+            return head + qtyCell(type, item) + commentCell(item) + '</tr>';
+        }
+
+        return head + priceCell(item) + qtyCell(type, item) +
+            '<td id="total_' + store.qtyKey(type, item.id) + '">' +
+            money(estimate.lineTotal(type, item.id)) +
+            '</td></tr>';
+    }
+
+    function calculatorHead(type) {
+        if (type === 'material') {
+            return '<th>Категорія</th><th>Назва</th><th>Од. вим.</th>' +
+                '<th style="width:150px;">Кількість</th><th>Коментар</th>';
+        }
+
+        return '<th>Категорія</th><th>Назва</th><th>Од. вим.</th><th style="width:170px;">Ціна (грн)</th>' +
+            '<th style="width:150px;">Кількість</th><th>Разом (грн)</th>';
     }
 
     function calculator(type) {
@@ -43,30 +112,12 @@ Calc.render = (function () {
         }
 
         var rows = items.map(function (item) {
-            var qty = store.getQty(type, item.id);
-            var qtyValue = qty ? esc(utils.formatQuantity(qty)) : '';
-
-            return '<tr>' +
-                '<td><span class="badge">' + esc(item.cat) + '</span></td>' +
-                '<td>' + esc(item.name) + '</td>' +
-                '<td>' + esc(item.unit) + '</td>' +
-                '<td>' + money(item.price) + '</td>' +
-                '<td>' +
-                    '<input type="number" class="form-control form-control--compact" min="0" placeholder="0"' +
-                    ' aria-label="Кількість: ' + esc(item.name) + '"' +
-                    ' value="' + qtyValue + '"' +
-                    ' oninput="updateQty(\'' + type + '\', ' + item.id + ', this.value)">' +
-                '</td>' +
-                '<td id="total_' + store.qtyKey(type, item.id) + '">' + money(qty * item.price) + '</td>' +
-                '</tr>';
+            return calculatorRow(type, item);
         }).join('');
 
         container.innerHTML =
             '<table>' +
-                '<thead><tr>' +
-                    '<th>Категорія</th><th>Назва</th><th>Од. вим.</th><th>Ціна (грн)</th>' +
-                    '<th style="width:150px;">Кількість</th><th>Разом (грн)</th>' +
-                '</tr></thead>' +
+                '<thead><tr>' + calculatorHead(type) + '</tr></thead>' +
                 '<tbody>' + rows + '</tbody>' +
             '</table>';
     }
@@ -76,15 +127,40 @@ Calc.render = (function () {
         if (cell) cell.innerText = money(estimate.lineTotal(type, id));
     }
 
-    function totals() {
-        var result = estimate.totals();
-        var jobs = utils.byId('headerJobsTotal');
-        var materials = utils.byId('headerMaterialsTotal');
-        var grand = utils.byId('headerGrandTotal');
+    /** Оновлює лише ознаку правки, щоб не перемальовувати рядок під час введення. */
+    function linePriceState(id) {
+        var key = store.qtyKey('job', id);
+        var input = utils.byId('price_' + key);
+        var reset = utils.byId('reset_' + key);
+        var edited = estimate.isPriceEdited('job', id);
 
-        if (jobs) jobs.innerText = money(result.jobsTotal);
-        if (materials) materials.innerText = money(result.materialsTotal);
-        if (grand) grand.innerText = money(result.grandTotal);
+        if (input) input.classList.toggle('is-price-edited', edited);
+        if (reset) reset.hidden = !edited;
+    }
+
+    function linePriceValue(id) {
+        var input = utils.byId('price_' + store.qtyKey('job', id));
+        if (input) input.value = money(estimate.priceOf('job', id));
+    }
+
+    function totals() {
+        var grand = utils.byId('headerGrandTotal');
+        if (grand) grand.innerText = money(estimate.totals().grandTotal);
+    }
+
+    function editMode() {
+        var bar = utils.byId('editModeBar');
+        var info = utils.byId('editModeInfo');
+        var saveButton = utils.byId('saveEstimateBtn');
+        var target = estimate.editing();
+
+        if (bar) bar.hidden = !target;
+        if (info && target) {
+            info.innerText = 'Редагування кошторису з архіву: ' + target.name + ' (від ' + target.date + ')';
+        }
+        if (saveButton) {
+            saveButton.innerText = target ? '💾 Оновити кошторис' : '💾 Зберегти в архів';
+        }
     }
 
     function categorySelect() {
@@ -120,33 +196,40 @@ Calc.render = (function () {
         }).join('');
     }
 
+    function settingsRow(type, item, index) {
+        var cells = '<td><span class="badge">' + esc(item.cat) + '</span></td>' +
+            '<td>' + esc(item.name) + '</td>' +
+            '<td>' + esc(item.unit) + '</td>';
+
+        if (type === 'job') cells += '<td>' + money(item.price) + '</td>';
+
+        return '<tr>' + cells +
+            '<td class="cell-order">' +
+                '<button class="sort-btn" onclick="moveItemOrder(\'' + type + '\', ' + index + ', \'up\')">▲</button>' +
+                '<button class="sort-btn" onclick="moveItemOrder(\'' + type + '\', ' + index + ', \'down\')">▼</button>' +
+            '</td>' +
+            '<td class="cell-actions">' +
+                '<button class="btn btn-info btn-sm" title="Редагувати" onclick="editItem(\'' + type + '\', ' + item.id + ')">✏️</button> ' +
+                '<button class="btn btn-danger btn-sm" title="Видалити" onclick="deleteItem(\'' + type + '\', ' + item.id + ')">&times;</button>' +
+            '</td>' +
+            '</tr>';
+    }
+
     function settingsTables() {
         Object.keys(SETTINGS_TABLES).forEach(function (type) {
             var body = utils.byId(SETTINGS_TABLES[type]);
             if (!body) return;
 
             var items = store.items(type);
+            var columns = type === 'job' ? 6 : 5;
 
             if (items.length === 0) {
-                body.innerHTML = '<tr><td colspan="6" class="cell-empty">Позицій ще немає</td></tr>';
+                body.innerHTML = '<tr><td colspan="' + columns + '" class="cell-empty">Позицій ще немає</td></tr>';
                 return;
             }
 
             body.innerHTML = items.map(function (item, index) {
-                return '<tr>' +
-                    '<td><span class="badge">' + esc(item.cat) + '</span></td>' +
-                    '<td>' + esc(item.name) + '</td>' +
-                    '<td>' + esc(item.unit) + '</td>' +
-                    '<td>' + money(item.price) + '</td>' +
-                    '<td class="cell-order">' +
-                        '<button class="sort-btn" onclick="moveItemOrder(\'' + type + '\', ' + index + ', \'up\')">▲</button>' +
-                        '<button class="sort-btn" onclick="moveItemOrder(\'' + type + '\', ' + index + ', \'down\')">▼</button>' +
-                    '</td>' +
-                    '<td class="cell-actions">' +
-                        '<button class="btn btn-info btn-sm" title="Редагувати" onclick="editItem(\'' + type + '\', ' + item.id + ')">✏️</button> ' +
-                        '<button class="btn btn-danger btn-sm" title="Видалити" onclick="deleteItem(\'' + type + '\', ' + item.id + ')">&times;</button>' +
-                    '</td>' +
-                    '</tr>';
+                return settingsRow(type, item, index);
             }).join('');
         });
     }
@@ -158,18 +241,19 @@ Calc.render = (function () {
         var list = estimate.archived();
 
         if (list.length === 0) {
-            body.innerHTML = '<tr><td colspan="6" class="cell-empty">Архів порожній</td></tr>';
+            body.innerHTML = '<tr><td colspan="4" class="cell-empty">Архів порожній</td></tr>';
             return;
         }
 
+        var editingId = store.getEditing();
+
         body.innerHTML = list.map(function (est) {
-            return '<tr>' +
+            return '<tr' + (est.id === editingId ? ' class="is-editing"' : '') + '>' +
                 '<td>' + esc(est.date) + '</td>' +
                 '<td><strong>' + esc(est.name) + '</strong></td>' +
-                '<td>' + money(est.jobsTotal) + ' грн</td>' +
-                '<td>' + money(est.materialsTotal) + ' грн</td>' +
-                '<td class="cell-accent">' + money(est.grandTotal) + ' грн</td>' +
+                '<td class="cell-accent">' + money(est.jobsTotal) + ' грн</td>' +
                 '<td class="cell-actions">' +
+                    '<button class="btn btn-success btn-sm" title="Редагувати" onclick="editArchivedEstimate(' + est.id + ')">✏️</button> ' +
                     '<button class="btn btn-info btn-sm" title="Переглянути" onclick="viewArchivedEstimate(' + est.id + ')">👁️</button> ' +
                     '<button class="btn btn-secondary btn-sm" title="Друк / Зберегти як PDF" onclick="printArchivedEstimate(' + est.id + ')">🖨️</button> ' +
                     '<button class="btn btn-primary btn-sm" title="Завантажити PDF" onclick="downloadArchivedPdf(' + est.id + ')">📄</button> ' +
@@ -183,7 +267,10 @@ Calc.render = (function () {
         all: all,
         calculator: calculator,
         lineTotal: lineTotal,
+        linePriceState: linePriceState,
+        linePriceValue: linePriceValue,
         totals: totals,
+        editMode: editMode,
         categorySelect: categorySelect,
         settingsCategories: settingsCategories,
         settingsTables: settingsTables,

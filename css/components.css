@@ -92,6 +92,16 @@ tr:hover td {
     font-weight: 700;
 }
 
+.cell-price {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+tr.is-editing td {
+    background-color: #fff7ed;
+}
+
 .empty-state {
     padding: 20px;
     color: #64748b;
@@ -115,6 +125,19 @@ tr:hover td {
 
 .form-control--compact {
     padding: 5px 10px;
+}
+
+/* Ціна, виправлена в розрахунку: підсвітка нагадує, що в базі лишилась інша. */
+.price-input.is-price-edited {
+    border-color: #f97316;
+    background: #fff7ed;
+    font-weight: 600;
+    color: #9a3412;
+}
+
+.price-reset {
+    flex: none;
+    color: #9a3412;
 }
 
 select.form-control {

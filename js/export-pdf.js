@@ -12,7 +12,8 @@ Calc.exportPdf = (function () {
     var PDF = Calc.config.PDF;
     var FONT = PDF.fontName;
 
-    var HEADERS = ['№', 'Назва', 'Од.', 'Ціна', 'К-сть', 'Сума'];
+    var JOB_HEADERS = ['№', 'Назва', 'Од.', 'Ціна', 'К-сть', 'Сума'];
+    var MATERIAL_HEADERS = ['№', 'Назва', 'Од.', 'К-сть'];
 
     function isAvailable() {
         return !!(window.jspdf && window.jspdf.jsPDF);
@@ -52,17 +53,53 @@ Calc.exportPdf = (function () {
         pdf.setTextColor(0);
     }
 
+    function sectionHeaders(section) {
+        if (section.kind !== 'material') return JOB_HEADERS;
+        return section.showComment ? MATERIAL_HEADERS.concat('Коментар') : MATERIAL_HEADERS;
+    }
+
     function sectionRows(section) {
         return section.lines.map(function (line, index) {
-            return [
+            if (section.kind !== 'material') {
+                return [
+                    String(index + 1),
+                    line.name,
+                    line.unit,
+                    utils.formatMoney(line.price),
+                    utils.formatQuantity(line.qty),
+                    utils.formatMoney(line.total)
+                ];
+            }
+
+            var row = [
                 String(index + 1),
                 line.name,
                 line.unit,
-                utils.formatMoney(line.price),
-                utils.formatQuantity(line.qty),
-                utils.formatMoney(line.total)
+                utils.formatQuantity(line.qty)
             ];
+
+            if (section.showComment) row.push(line.comment);
+            return row;
         });
+    }
+
+    /** Ширини колонок різні: у матеріалів немає ціни й суми, зате може бути коментар. */
+    function columnStylesFor(section) {
+        if (section.kind !== 'material') {
+            return {
+                0: { cellWidth: 10, halign: 'right' },
+                2: { cellWidth: 16 },
+                3: { cellWidth: 24, halign: 'right' },
+                4: { cellWidth: 20, halign: 'right' },
+                5: { cellWidth: 28, halign: 'right' }
+            };
+        }
+
+        return {
+            0: { cellWidth: 10, halign: 'right' },
+            2: { cellWidth: 16 },
+            3: { cellWidth: 20, halign: 'right' }
+        };
     }
 
     /** Шрифт треба вказати в КОЖНІЙ групі стилів, інакше autoTable візьме helvetica. */
@@ -91,13 +128,6 @@ Calc.exportPdf = (function () {
             bodyStyles: {
                 font: FONT,
                 fontStyle: 'normal'
-            },
-            columnStyles: {
-                0: { cellWidth: 10, halign: 'right' },
-                2: { cellWidth: 16 },
-                3: { cellWidth: 24, halign: 'right' },
-                4: { cellWidth: 20, halign: 'right' },
-                5: { cellWidth: 28, halign: 'right' }
             }
         };
     }
@@ -109,10 +139,9 @@ Calc.exportPdf = (function () {
 
         var styles = tableStyles();
 
-        pdf.autoTable({
-            head: [HEADERS],
+        var options = {
+            head: [sectionHeaders(section)],
             body: sectionRows(section),
-            foot: [['', section.totalLabel, '', '', '', utils.formatMoney(section.total)]],
             startY: startY + 3,
             margin: { left: PDF.marginX, right: PDF.marginX, top: PDF.marginTop },
             theme: 'grid',
@@ -120,13 +149,19 @@ Calc.exportPdf = (function () {
             headStyles: styles.headStyles,
             footStyles: styles.footStyles,
             bodyStyles: styles.bodyStyles,
-            columnStyles: styles.columnStyles,
+            columnStyles: columnStylesFor(section),
             showHead: 'everyPage',
             showFoot: 'lastPage',
             didDrawPage: function () {
                 drawFooter(pdf);
             }
-        });
+        };
+
+        if (section.kind !== 'material') {
+            options.foot = [['', section.totalLabel, '', '', '', utils.formatMoney(section.total)]];
+        }
+
+        pdf.autoTable(options);
 
         return pdf.lastAutoTable.finalY;
     }

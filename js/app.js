@@ -19,25 +19,50 @@ Calc.app = (function () {
         return result && result.ok;
     }
 
-    function switchTab(event, tabId) {
+    function activateTab(tabId) {
         document.querySelectorAll('.tab-pane').forEach(function (pane) {
-            pane.classList.remove('active');
+            pane.classList.toggle('active', pane.id === tabId);
         });
         document.querySelectorAll('.tab-link').forEach(function (link) {
-            link.classList.remove('active');
+            link.classList.toggle('active', link.getAttribute('data-tab') === tabId);
         });
 
-        var pane = utils.byId(tabId);
-        if (pane) pane.classList.add('active');
-        if (event && event.currentTarget) event.currentTarget.classList.add('active');
-
         render.all();
+    }
+
+    function switchTab(tabId) {
+        activateTab(tabId);
     }
 
     function updateQty(type, id, value) {
         store.setQty(type, id, value);
         render.lineTotal(type, id);
         render.totals();
+    }
+
+    /** Порожнє поле означає «як у базі», тому правку просто прибираємо. */
+    function updateLinePrice(id, value) {
+        if (String(value).trim() === '') {
+            store.clearPriceOverride('job', id);
+        } else {
+            store.setPriceOverride('job', id, value);
+        }
+
+        render.linePriceState(id);
+        render.lineTotal('job', id);
+        render.totals();
+    }
+
+    function resetLinePrice(id) {
+        store.clearPriceOverride('job', id);
+        render.linePriceValue(id);
+        render.linePriceState(id);
+        render.lineTotal('job', id);
+        render.totals();
+    }
+
+    function updateComment(id, value) {
+        store.setComment('material', id, value);
     }
 
     function addCategory() {
@@ -70,6 +95,16 @@ Calc.app = (function () {
         if (notifyError(catalog.removeCategory(index))) render.all();
     }
 
+    /** Ціна є лише в робіт, тому для матеріалів поле ховаємо. */
+    function onItemTypeChange() {
+        var type = utils.byId('newItemType').value;
+        var price = utils.byId('newItemPrice');
+        if (!price) return;
+
+        price.hidden = type !== 'job';
+        if (price.hidden) price.value = '';
+    }
+
     function addNewItem() {
         var type = utils.byId('newItemType').value;
         var fields = {
@@ -98,13 +133,16 @@ Calc.app = (function () {
         var unit = prompt('Нова од. виміру:', item.unit);
         if (unit === null) return;
 
-        var price = prompt('Нова ціна:', item.price);
-        if (price === null) return;
-        if (!isFinite(parseFloat(price))) return alert('Ціна має бути числом');
+        var fields = { name: name, unit: unit };
 
-        if (notifyError(catalog.updateItem(type, id, { name: name, unit: unit, price: price }))) {
-            render.all();
+        if (type === 'job') {
+            var price = prompt('Нова ціна:', item.price);
+            if (price === null) return;
+            if (!isFinite(parseFloat(price))) return alert('Ціна має бути числом');
+            fields.price = price;
         }
+
+        if (notifyError(catalog.updateItem(type, id, fields))) render.all();
     }
 
     function deleteItem(type, id) {
@@ -124,14 +162,21 @@ Calc.app = (function () {
         return input ? input.value : '';
     }
 
+    function setCurrentName(name) {
+        var input = utils.byId('estimateName');
+        if (input) input.value = name;
+    }
+
     function currentDoc() {
         return estimateDoc.buildFromCurrent(currentName());
     }
 
     function saveCurrentEstimate() {
-        if (!notifyError(estimate.saveToArchive(currentName()))) return;
+        var result = estimate.saveToArchive(currentName());
+        if (!notifyError(result)) return;
+
         render.all();
-        alert('Кошторис збережено в архів!');
+        alert(result.updated ? 'Кошторис оновлено в архіві!' : 'Кошторис збережено в архів!');
     }
 
     function openPreviewModal() {
@@ -148,10 +193,32 @@ Calc.app = (function () {
         preview.open(model, model.name + ' (Архів від ' + model.date + ')');
     }
 
+    function editArchivedEstimate(id) {
+        var result = estimate.loadForEdit(id);
+        if (!notifyError(result)) return;
+
+        setCurrentName(result.name);
+        activateTab('jobs-content');
+
+        if (result.missing.length > 0) {
+            alert('Цих позицій уже немає в базі, тому їх не перенесено:\n• ' + result.missing.join('\n• '));
+        }
+    }
+
+    function exitEditMode() {
+        if (!estimate.editing()) return;
+        if (!confirm('Вийти з режиму редагування? Незбережені зміни буде втрачено.')) return;
+
+        estimate.exitEdit();
+        setCurrentName(Calc.config.DEFAULT_ESTIMATE_NAME);
+        render.all();
+    }
+
     function deleteEstimate(id) {
         if (!confirm('Видалити цей кошторис з архіву?')) return;
+
         estimate.removeArchived(id);
-        render.savedEstimates();
+        render.all();
     }
 
     function printCurrentEstimate() {
@@ -175,10 +242,15 @@ Calc.app = (function () {
     }
 
     function importDatabase(event) {
-        Calc.exportJson.importDatabase(event, render.all);
+        Calc.exportJson.importDatabase(event, function () {
+            setCurrentName(Calc.config.DEFAULT_ESTIMATE_NAME);
+            render.all();
+        });
     }
 
     function init() {
+        setCurrentName(Calc.config.DEFAULT_ESTIMATE_NAME);
+        onItemTypeChange();
         render.all();
     }
 
@@ -186,9 +258,13 @@ Calc.app = (function () {
         init: init,
         switchTab: switchTab,
         updateQty: updateQty,
+        updateLinePrice: updateLinePrice,
+        resetLinePrice: resetLinePrice,
+        updateComment: updateComment,
         addCategory: addCategory,
         editCategory: editCategory,
         deleteCategory: deleteCategory,
+        onItemTypeChange: onItemTypeChange,
         addNewItem: addNewItem,
         editItem: editItem,
         deleteItem: deleteItem,
@@ -197,6 +273,8 @@ Calc.app = (function () {
         openPreviewModal: openPreviewModal,
         closePreviewModal: closePreviewModal,
         viewArchivedEstimate: viewArchivedEstimate,
+        editArchivedEstimate: editArchivedEstimate,
+        exitEditMode: exitEditMode,
         deleteEstimate: deleteEstimate,
         printCurrentEstimate: printCurrentEstimate,
         printArchivedEstimate: printArchivedEstimate,

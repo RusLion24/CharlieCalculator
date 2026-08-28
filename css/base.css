@@ -12,6 +12,11 @@ body {
     padding: 20px;
 }
 
+/* Власні правила display перебивають стандартну поведінку hidden, тому вмикаємо її явно. */
+[hidden] {
+    display: none !important;
+}
+
 h1 {
     margin: 0;
     font-size: 28px;

@@ -72,23 +72,30 @@ Calc.catalog = (function () {
         }, 0) + 1;
     }
 
+    /** Ціна стосується лише робіт: матеріали зберігаються як перелік без грошей. */
     function addItem(type, fields) {
         var name = String(fields.name || '').trim();
         var unit = String(fields.unit || '').trim();
         var price = parseFloat(fields.price);
 
-        if (!name || !unit || !isFinite(price)) {
+        if (!name || !unit) {
             return { ok: false, error: 'Заповніть всі поля коректно' };
         }
 
-        store.items(type).push({
+        if (type === 'job' && !isFinite(price)) {
+            return { ok: false, error: 'Вкажіть ціну роботи числом' };
+        }
+
+        var item = {
             id: nextId(type),
             cat: String(fields.cat || ''),
             name: name,
-            unit: unit,
-            price: price
-        });
+            unit: unit
+        };
 
+        if (type === 'job') item.price = price;
+
+        store.items(type).push(item);
         store.save();
         return { ok: true };
     }
@@ -100,7 +107,7 @@ Calc.catalog = (function () {
         if (fields.name !== undefined) item.name = String(fields.name).trim() || item.name;
         if (fields.unit !== undefined) item.unit = String(fields.unit).trim() || item.unit;
         if (fields.cat !== undefined) item.cat = String(fields.cat);
-        if (fields.price !== undefined) item.price = utils.toNumber(fields.price);
+        if (type === 'job' && fields.price !== undefined) item.price = utils.toNumber(fields.price);
 
         store.save();
         return { ok: true };

@@ -5,6 +5,7 @@ window.Calc = window.Calc || {};
 Calc.config = {
     STORAGE_KEY: 'build_calc_db',
     CURRENCY: 'грн',
+    DEFAULT_ESTIMATE_NAME: 'Кошторис об\'єкту (Новий)',
 
     DEFAULT_DATA: {
         categories: ['Загальнобудівельні', 'Електрика', 'Сантехніка', 'Оздоблення'],
@@ -14,9 +15,9 @@ Calc.config = {
             { id: 3, cat: 'Оздоблення', name: 'Фарбування стін', unit: 'м2', price: 90 }
         ],
         materials: [
-            { id: 1, cat: 'Загальнобудівельні', name: 'Цемент М-500 (25кг)', unit: 'міш.', price: 180 },
-            { id: 2, cat: 'Оздоблення', name: 'Ґрунтовка (10л)', unit: 'кан.', price: 320 },
-            { id: 3, cat: 'Оздоблення', name: 'Шпаклівка фінішна (25кг)', unit: 'міш.', price: 450 }
+            { id: 1, cat: 'Загальнобудівельні', name: 'Цемент М-500 (25кг)', unit: 'міш.' },
+            { id: 2, cat: 'Оздоблення', name: 'Ґрунтовка (10л)', unit: 'кан.' },
+            { id: 3, cat: 'Оздоблення', name: 'Шпаклівка фінішна (25кг)', unit: 'міш.' }
         ],
         estimates: []
     },

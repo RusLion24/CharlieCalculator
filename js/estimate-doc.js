@@ -1,6 +1,8 @@
 /* Спільна модель документа кошторису.
    Одна форма даних для трьох споживачів (перегляд, друк, PDF) і двох джерел
-   (поточний кошторис та архівний запис) — щоб не дублювати побудову таблиць. */
+   (поточний кошторис та архівний запис) — щоб не дублювати побудову таблиць.
+
+   Роботи мають ціну й суму, матеріали — лише обсяг і коментар. */
 
 window.Calc = window.Calc || {};
 
@@ -10,9 +12,10 @@ Calc.estimateDoc = (function () {
     var utils = Calc.utils;
     var estimate = Calc.estimate;
 
-    function toLine(item) {
+    function toJobLine(item) {
         var qty = utils.toNumber(item.qty);
         var price = utils.toNumber(item.price);
+
         return {
             name: item.name,
             cat: item.cat,
@@ -23,15 +26,30 @@ Calc.estimateDoc = (function () {
         };
     }
 
+    function toMaterialLine(item) {
+        return {
+            name: item.name,
+            cat: item.cat,
+            unit: item.unit,
+            qty: utils.toNumber(item.qty),
+            comment: item.comment === null || item.comment === undefined ? '' : String(item.comment)
+        };
+    }
+
     function sum(lines) {
         return lines.reduce(function (acc, line) {
             return acc + line.total;
         }, 0);
     }
 
-    function make(name, date, jobs, materials, knownTotals) {
-        var jobsTotal = knownTotals ? knownTotals.jobsTotal : sum(jobs);
-        var materialsTotal = knownTotals ? knownTotals.materialsTotal : sum(materials);
+    function hasAnyComment(materials) {
+        return materials.some(function (line) {
+            return String(line.comment).trim() !== '';
+        });
+    }
+
+    function make(name, date, jobs, materials) {
+        var jobsTotal = sum(jobs);
 
         return {
             name: name,
@@ -39,8 +57,8 @@ Calc.estimateDoc = (function () {
             jobs: jobs,
             materials: materials,
             jobsTotal: jobsTotal,
-            materialsTotal: materialsTotal,
-            grandTotal: knownTotals ? knownTotals.grandTotal : jobsTotal + materialsTotal,
+            grandTotal: jobsTotal,
+            hasComments: hasAnyComment(materials),
             isEmpty: jobs.length === 0 && materials.length === 0
         };
     }
@@ -49,9 +67,8 @@ Calc.estimateDoc = (function () {
         return make(
             String(name || '').trim() || 'Кошторис без назви',
             utils.formatDateTime(),
-            estimate.selectedLines('job').map(toLine),
-            estimate.selectedLines('material').map(toLine),
-            null
+            estimate.selectedLines('job').map(toJobLine),
+            estimate.selectedLines('material').map(toMaterialLine)
         );
     }
 
@@ -59,26 +76,36 @@ Calc.estimateDoc = (function () {
         var est = estimate.findArchived(id);
         if (!est) return null;
 
-        function linesOf(type) {
-            return est.items
-                .filter(function (item) {
-                    return item.type === type;
-                })
-                .map(toLine);
+        function itemsOf(type) {
+            return est.items.filter(function (item) {
+                return item.type === type;
+            });
         }
 
-        return make(est.name, est.date, linesOf('job'), linesOf('material'), {
-            jobsTotal: est.jobsTotal,
-            materialsTotal: est.materialsTotal,
-            grandTotal: est.grandTotal
-        });
+        return make(
+            est.name,
+            est.date,
+            itemsOf('job').map(toJobLine),
+            itemsOf('material').map(toMaterialLine)
+        );
     }
 
     /** Секції у порядку, в якому їх показують усі споживачі. */
     function sections(doc) {
         return [
-            { title: 'Роботи', lines: doc.jobs, total: doc.jobsTotal, totalLabel: 'Всього роботи:' },
-            { title: 'Матеріали', lines: doc.materials, total: doc.materialsTotal, totalLabel: 'Всього матеріали:' }
+            {
+                title: 'Роботи',
+                kind: 'job',
+                lines: doc.jobs,
+                total: doc.jobsTotal,
+                totalLabel: 'Всього роботи:'
+            },
+            {
+                title: 'Матеріали',
+                kind: 'material',
+                lines: doc.materials,
+                showComment: doc.hasComments
+            }
         ].filter(function (section) {
             return section.lines.length > 0;
         });
